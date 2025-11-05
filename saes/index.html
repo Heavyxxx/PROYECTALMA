@@ -12,8 +12,31 @@
 </head>
 <body class="auth-only">
   <div class="app-root">
-    <!-- Page-level welcome (outside the login card) -->
-    <div id="pageWelcome" class="page-welcome" aria-hidden="true"></div>
+    <header class="topbar" role="banner">
+      <div class="container">
+        <div class="brand">
+          <div class="logo" aria-hidden="true">AL</div>
+          <div style="display:flex;flex-direction:column;line-height:1">
+            <strong style="font-size:14px">A.L.M.A.</strong>
+            <small style="font-size:11px;color:var(--color-muted)">SAES — Demo</small>
+          </div>
+        </div>
+        <div class="search" >
+          <input aria-label="Buscar" placeholder="Buscar estudiantes, materias, trámites..." style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--glass-border); margin:0;" />
+        </div>
+        <div class="top-actions">
+          <button id="exportGrades" class="btn small" title="Exportar CSV">Exportar CSV</button>
+          <button id="downloadTiraTop" class="btn small" title="Exportar Tira PDF">Exportar PDF</button>
+          <button id="btnLogin" class="btn small">Iniciar sesión</button>
+        </div>
+      </div>
+    </header>
+    <!-- Page-level welcome (static, non-animated) -->
+    <div id="pageWelcome" class="page-welcome page-welcome-static" aria-hidden="false" aria-label="Bienvenida">
+      <div class="welcome-inner">
+        <span class="letter large">Bienvenido a A.L.M.A.</span>
+      </div>
+    </div>
     <main id="content">
       <!-- ONLY LOGIN CARD -->
       <section id="view-login" class="view active" role="region" aria-label="Login">
@@ -48,30 +71,45 @@
         </div>
       </section>
 
-      <!-- DUAL DEMO VIEW: show both student and teacher interfaces side-by-side -->
+      <!-- DUAL DEMO VIEW: muestra ambas interfaces (estudiante + docente) lado a lado -->
       <section id="view-dual" class="view" role="region" aria-label="Demo Dual">
         <div class="container">
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:28px">
-            <div>
-              <div class="card">
-                <h3 style="margin:0 0 8px">Interfaz Estudiante (vista demo)</h3>
-                <div class="text-muted">Resumen y calificaciones</div>
-                <div style="margin-top:12px">
-                  <div class="muted-small">GPA</div>
-                  <div id="gpa_dual" style="font-weight:700; font-size:20px">—</div>
-                  <div class="table-responsive" style="margin-top:12px">
-                    <table class="table" id="gradesTable_dual"><thead><tr><th>Materia</th><th>Profesor</th><th>Final</th></tr></thead><tbody></tbody></table>
-                  </div>
-                </div>
-              </div>
+          <div class="mt-12" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div>
+          <div class="card">
+            <h3 style="margin: 0 0 8px;">Interfaz estudiante — vista demo</h3>
+            <div class="text-muted">Resumen académico y calificaciones</div>
+
+            <div class="mt-12">
+          <div class="muted-small">GPA</div>
+          <div id="gpa_dual" style="font-weight: 700; font-size: 20px;" aria-live="polite">—</div>
+
+          <div class="table-responsive mt-12">
+            <table class="table" id="gradesTable_dual" aria-label="Historial de calificaciones (demo)">
+              <thead>
+            <tr>
+              <th>Materia</th>
+              <th>Profesor</th>
+              <th>Final</th>
+            </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
             </div>
-            <div>
-              <div class="card">
-                <h3 style="margin:0 0 8px">Interfaz Docente (vista demo)</h3>
-                <div class="text-muted">Captura y grupos</div>
-                <div id="teacherCapture_dual" style="margin-top:12px">Cargando herramienta docente...</div>
-              </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="card">
+            <h3 style="margin: 0 0 8px;">Interfaz docente — vista demo</h3>
+            <div class="text-muted">Herramientas de captura y gestión de grupos</div>
+
+            <div id="teacherCapture_dual" class="mt-12" aria-live="polite">
+          Cargando herramienta docente...
             </div>
+          </div>
+        </div>
           </div>
         </div>
       </section>
@@ -79,90 +117,133 @@
       <!-- STUDENT DASHBOARD -->
       <section id="view-dashboard" class="view" role="region" aria-label="Dashboard">
         <div class="container">
-          <div class="grid" style="grid-template-columns:2fr 1fr; gap:20px; margin-top:40px">
-            <div class="main-col">
-              <!-- Summary / KPIs -->
-              <div class="card" style="display:flex; gap:18px; align-items:center; justify-content:space-between">
-                <div>
-                  <h2 style="margin:0 0 6px; font-size:22px">Bienvenido, <span id="userGreeting">Alumno</span></h2>
-                  <div class="text-muted">Resumen académico</div>
-                </div>
-                <div style="display:flex; gap:12px; align-items:center">
-                  <div style="text-align:center">
-                    <div class="muted-small">GPA</div>
-                    <div id="gpa" style="font-weight:700; font-size:20px">—</div>
-                  </div>
-                  <div style="text-align:center">
-                    <div class="muted-small">Créditos</div>
-                    <div id="credits" style="font-weight:700; font-size:20px">—</div>
-                  </div>
-                  <div style="text-align:center">
-                    <div class="muted-small">Periodo</div>
-                    <div id="currentPeriod" style="font-weight:700; font-size:20px">—</div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Grades table -->
-              <div class="card" style="margin-top:18px">
-                <div class="card-header">
-                  <div style="font-weight:700">Calificaciones — Historial</div>
-                  <div>
-                    <button id="downloadTira" class="btn small">Exportar PDF</button>
-                  </div>
-                </div>
-                <div class="card-body">
-                  <div class="table-responsive">
-                    <table id="gradesTable" class="table">
-                      <thead><tr><th>Materia</th><th>Profesor</th><th>Parciales</th><th>Final</th><th>Estado</th></tr></thead>
-                      <tbody>
-                        <!-- renderGrades rellenará -->
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Schedule + Requests -->
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:18px">
-                <div class="card">
-                  <div class="card-header"><div style="font-weight:700">Horario</div></div>
-                  <div class="card-body" id="scheduleContent">(Horario y mapa interactivo en una versión completa)</div>
-                </div>
-                <div class="card">
-                  <div class="card-header"><div style="font-weight:700">Trámites en línea</div></div>
-                  <div class="card-body">
-                    <div style="margin-bottom:8px">Solicita trámites académicos</div>
-                    <div class="form-row"><select id="reqType" class="form-control"><option value="baja">Baja temporal</option><option value="constancia">Constancia</option><option value="otro">Otro</option></select></div>
-                    <div class="form-row"><textarea id="reqDesc" class="form-control" rows="2" placeholder="Descripción (breve)"></textarea></div>
-                    <div class="form-row"><button id="reqSubmit" class="btn small">Enviar solicitud</button></div>
-                    <div id="reqResult" class="muted-small mt-8"></div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Account -->
-              <div class="card" style="margin-top:18px">
-                <div class="card-header"><div style="font-weight:700">Estado de cuenta</div>
-                  <div><button id="accountExport" class="btn small">Exportar</button></div>
-                </div>
-                <div class="card-body">Saldo: <strong id="balance"> <span>—</span></strong></div>
-              </div>
+          <div class="grid mt-12" style="grid-template-columns: 2fr 1fr; gap: 20px;">
+        <div class="main-col">
+          <!-- Summary / KPIs -->
+          <div class="card" style="display: flex; gap: 18px; align-items: center; justify-content: space-between;">
+            <div>
+          <h2 style="margin: 0 0 6px; font-size: 22px;">
+            <span id="userGreeting">Alumno</span>
+          </h2>
+          <div class="text-muted">Resumen académico</div>
             </div>
 
-            <aside class="side-col">
-              <div class="card">
-                <div style="font-weight:700">Notificaciones</div>
-                <div id="notificationsList" class="mt-8">Cargando notificaciones...</div>
-              </div>
-              <div class="card" style="margin-top:18px">
-                <div style="font-weight:700">Acciones rápidas</div>
-                <div style="display:flex; gap:8px; margin-top:10px">
-                  <button class="btn small">Inscripción</button>
-                  <button class="btn outline small">Horario</button>
-                </div>
-              </div>
-            </aside>
+            <div style="display: flex; gap: 12px; align-items: center;">
+          <div style="text-align: center;">
+            <div class="muted-small">GPA</div>
+            <div id="gpa" style="font-weight: 700; font-size: 20px;" aria-live="polite">—</div>
+          </div>
+
+          <div style="text-align: center;">
+            <div class="muted-small">Créditos</div>
+            <div id="credits" style="font-weight: 700; font-size: 20px;">—</div>
+          </div>
+
+          <div style="text-align: center;">
+            <div class="muted-small">Periodo</div>
+            <div id="currentPeriod" style="font-weight: 700; font-size: 20px;">—</div>
+          </div>
+            </div>
+          </div>
+
+          <!-- Grades table -->
+          <div class="card mt-16">
+            <div class="card-header">
+          <div style="font-weight: 700;">Calificaciones — Historial</div>
+          <div>
+            <button id="downloadTira" class="btn small">Exportar PDF</button>
+          </div>
+            </div>
+
+            <div class="card-body">
+          <div class="table-responsive">
+            <table id="gradesTable" class="table" aria-label="Tabla de calificaciones">
+              <thead>
+            <tr>
+              <th>Materia</th>
+              <th>Profesor</th>
+              <th>Parciales</th>
+              <th>Final</th>
+              <th>Estado</th>
+            </tr>
+              </thead>
+              <tbody>
+            <!-- renderGrades rellenará -->
+              </tbody>
+            </table>
+          </div>
+            </div>
+          </div>
+
+          <!-- Schedule + Requests -->
+          <div class="mt-16" style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px;">
+            <div class="card">
+          <div class="card-header">
+            <div style="font-weight: 700;">Horario</div>
+          </div>
+          <div class="card-body" id="scheduleContent">
+            (Horario y mapa interactivo en una versión completa)
+          </div>
+            </div>
+
+            <div class="card">
+          <div class="card-header">
+            <div style="font-weight: 700;">Trámites en línea</div>
+          </div>
+
+          <div class="card-body">
+            <div style="margin-bottom: 8px;">Solicita trámites académicos</div>
+
+            <div class="form-row">
+              <select id="reqType" class="form-control" aria-label="Tipo de trámite">
+            <option value="baja">Baja temporal</option>
+            <option value="constancia">Constancia</option>
+            <option value="otro">Otro</option>
+              </select>
+            </div>
+
+            <div class="form-row">
+              <textarea id="reqDesc" class="form-control" rows="2" placeholder="Descripción (breve)"></textarea>
+            </div>
+
+            <div class="form-row">
+              <button id="reqSubmit" class="btn small">Enviar solicitud</button>
+            </div>
+
+            <div id="reqResult" class="muted-small mt-8" aria-live="polite"></div>
+          </div>
+            </div>
+          </div>
+
+          <!-- Account -->
+          <div class="card mt-16">
+            <div class="card-header">
+          <div style="font-weight: 700;">Estado de cuenta</div>
+          <div>
+            <button id="accountExport" class="btn small">Exportar</button>
+          </div>
+            </div>
+
+            <div class="card-body">
+          Saldo: <strong id="balance"><span>—</span></strong>
+            </div>
+          </div>
+        </div>
+
+        <aside class="side-col">
+          <div class="card">
+            <div style="font-weight: 700;">Notificaciones</div>
+            <div id="notificationsList" class="mt-8">Cargando notificaciones...</div>
+          </div>
+
+          <div class="card mt-16">
+            <div style="font-weight: 700;">Acciones rápidas</div>
+            <div class="mt-8" style="display: flex; gap: 8px;">
+          <button class="btn small">Inscripción</button>
+          <button class="btn outline small">Horario</button>
+            </div>
+          </div>
+        </aside>
           </div>
         </div>
       </section>
@@ -170,14 +251,14 @@
       <!-- TEACHER DASHBOARD -->
       <section id="view-teacher" class="view" role="region" aria-label="Teacher">
         <div class="container">
-          <div class="grid" style="grid-template-columns:2fr 1fr; gap:20px; margin-top:40px">
+          <div class="grid mt-12" style="grid-template-columns:2fr 1fr; gap:20px;">
             <div class="main-col">
               <div class="card">
                 <h2 style="margin:0 0 8px; font-size:22px">Panel docente</h2>
                 <div class="text-muted">Herramientas para captura y gestión de grupos</div>
               </div>
 
-              <div class="card" style="margin-top:18px">
+              <div class="card mt-16">
                 <div class="card-header"><div style="font-weight:700">Captura de calificaciones</div></div>
                 <div class="card-body">
                   <!-- Este contenedor lo usa initTeacherCapture -->
@@ -185,7 +266,7 @@
                 </div>
               </div>
 
-              <div class="card" style="margin-top:18px">
+              <div class="card mt-16">
                 <div class="card-header"><div style="font-weight:700">Reportes de grupo</div>
                   <div><button id="exportGroupReport" class="btn small">Exportar</button></div>
                 </div>
@@ -198,11 +279,13 @@
                 <div style="font-weight:700">Grupos asignados</div>
                 <div id="teacherGroups" class="mt-8">Cargando grupos...</div>
               </div>
-              <div class="card" style="margin-top:18px">
-                <div style="font-weight:700">Acciones</div>
-                <div style="display:flex; gap:8px; margin-top:10px">
-                  <button class="btn small" id="openCapture">Nueva captura</button>
-                  <button class="btn outline small" id="viewAttendance">Asistencia</button>
+              <div class="card mt-16">
+                <div class="card-header"><div style="font-weight:700">Acciones</div></div>
+                <div class="card-body">
+                  <div class="mt-8" style="display:flex; gap:8px;">
+                    <button class="btn small" id="openCapture">Nueva captura</button>
+                    <button class="btn outline small" id="viewAttendance">Asistencia</button>
+                  </div>
                 </div>
               </div>
             </aside>
@@ -214,6 +297,12 @@
     <script src="js/api-mock.js"></script>
     <!-- jsPDF (cliente) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="js/toast.js"></script>
+  <script src="js/app-motion.js"></script>
+  <script src="js/alma-bot.js"></script>
+  <script src="js/mini-bot.js"></script>
+  <script src="js/student.js"></script>
+  <script src="js/teacher.js"></script>
     <script src="js/app.js"></script>
   </div>
 </body>

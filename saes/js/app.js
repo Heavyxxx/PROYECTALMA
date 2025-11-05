@@ -1,14 +1,16 @@
-// Use the global api provided by js file (api-mock.js exposes window.api)
-const api = window.api;
+// Encapsular todo en IIFE para evitar colisiones globales
+(function(){
+  // Use the global api provided by js file (api-mock.js exposes window.api)
+  const api = window.api;
 
-let session = null; // {role, matricula, name}
+  let session = null; // {role, matricula, name}
 
-// Utils
-const $ = (sel) => document.querySelector(sel);
-const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+  // Utils (local to this module)
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
-// Init
-function init(){
+  // Init
+  async function init(){
   // Hook nav (if present)
   const navItems = $$('#mainNav .nav-item');
   if(navItems && navItems.length) navItems.forEach(el=> el.addEventListener('click', (e)=>{ setRoute(el.dataset.route); }));
@@ -26,12 +28,12 @@ function init(){
   const loginSubmit = $('#loginSubmit'); if(loginSubmit) loginSubmit.addEventListener('click', doLogin);
   const exportGradesBtn = $('#exportGrades');
   if(exportGradesBtn) exportGradesBtn.addEventListener('click', async ()=>{
-    if(!session || !session.matricula) return alert('Inicia sesión');
-    const csv = await api.exportGradesCSV(session.matricula);
-    const blob = new Blob([csv], {type:'text/csv'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = `${session.matricula}_grades.csv`; a.click(); URL.revokeObjectURL(url);
+    // delegate to helper (handles absence of session)
+    try{ await exportGradesCSVHandler(); }catch(e){ console.warn('CSV export failed', e); alert('Error al exportar CSV'); }
   });
+  // topbar PDF export (mirror of downloadTira)
+  const downloadTiraTop = document.getElementById('downloadTiraTop');
+  if(downloadTiraTop) downloadTiraTop.addEventListener('click', async ()=>{ if(!session || !session.matricula) return alert('Inicia sesión'); await exportGradesPDF(session.matricula); });
   // PDF export buttons
   const downloadTiraBtn = document.getElementById('downloadTira');
   if(downloadTiraBtn) downloadTiraBtn.addEventListener('click', async ()=>{
@@ -57,7 +59,18 @@ function init(){
   }
 
   // Trigger page-level welcome animation (outside login)
-  animatePageWelcome('Bienvenido a A.L.M.A.');
+  // Only show the large page welcome on auth-only (login) screens — avoid repeating it inside dashboards
+  try{
+    if((!session || session === null) && document.body.classList.contains('auth-only')){
+      // If another script (e.g., js/login.js) already rendered #pageWelcome, don't duplicate it
+      const pw = document.getElementById('pageWelcome');
+      if(pw && pw.children && pw.children.length > 0){
+        // already rendered by page-specific script; skip
+      } else {
+        animatePageWelcome('Bienvenido a A.L.M.A.');
+      }
+    }
+  }catch(e){ /* ignore */ }
 }
 
 // Create and animate page-level welcome text (big, elegant letters)
@@ -143,14 +156,25 @@ function toast(message, timeout=3000){
 async function exportGradesPDF(matricula){
   // cargar datos
   const grades = await api.getGrades(matricula);
-  const summary = await api.getSummary(matricula);
+  const summary = await api.getSummary ? await api.getSummary(matricula) : null;
   // acceso a jsPDF UMD
-  const { jsPDF } = window.jspdf;
+  const { jsPDF } = window.jspdf || {};
+  if(!jsPDF){
+    alert('jsPDF no disponible');
+    return;
+  }
   const doc = new jsPDF({ unit: 'pt', format: 'letter' });
   const margin = 40;
   let y = 40;
-  // Header
-  doc.setFontSize(16); doc.setTextColor('#0B2545'); doc.text('ALMA - Tira de Materias', margin, y); y += 22;
+  // Header (accent bar + title)
+  try{
+    doc.setFillColor('#8B1E2F');
+    doc.rect(0, 0, doc.internal.pageSize.getWidth(), 36, 'F');
+    doc.setFontSize(18); doc.setTextColor('#ffffff'); doc.text('A.L.M.A. — Tira de Materias', margin, 26);
+  }catch(e){
+    doc.setFontSize(16); doc.setTextColor('#0B2545'); doc.text('ALMA - Tira de Materias', margin, y); y += 22;
+  }
+  y += 12;
   doc.setFontSize(10); doc.setTextColor('#333'); doc.text(`Nombre: ${summary?.name || ''}`, margin, y); y += 14;
   doc.text(`Matrícula: ${matricula}`, margin, y); y += 18;
   doc.text(`Periodo: ${summary?.period || '2025-2'}`, margin, y); y += 18;
@@ -168,10 +192,10 @@ async function exportGradesPDF(matricula){
 
   // Rows
   doc.setFontSize(10); doc.setTextColor('#222');
-  grades.forEach(g => {
-    doc.text(g.nombreMateria || g.materiaId || '', startX + 6, y);
+  (grades||[]).forEach(g => {
+    doc.text(g.nombreMateria || g.materiaId || g.materia || '', startX + 6, y);
     doc.text(g.profesor || '', startX + 200, y);
-    doc.text(String(g.final || ''), startX + 360, y);
+    doc.text(String(g.final || g.calificacion || ''), startX + 360, y);
     y += 16;
     if(y > 720){ doc.addPage(); y = 40; }
   });
@@ -182,11 +206,24 @@ async function exportGradesPDF(matricula){
   doc.save(`${matricula}_tira_materias.pdf`);
 }
 
+// CSV export helper (used by topbar button)
+async function exportGradesCSVHandler(){
+  const s = session || JSON.parse(sessionStorage.getItem('saes_session')||'null');
+  if(!s || !s.matricula) return alert('Inicia sesión para exportar.');
+  const csv = await api.exportGradesCSV(s.matricula);
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `${s.matricula}_grades.csv`; a.click(); URL.revokeObjectURL(url);
+}
+// expose CSV helper globally so widgets (ALMA Bot) can call it
+try{ window.exportGradesCSVHandler = exportGradesCSVHandler; }catch(e){/* ignore when not allowed */}
+
 async function exportAccountPDF(matricula){
-  const { jsPDF } = window.jspdf;
+  const { jsPDF } = window.jspdf || {};
+  if(!jsPDF){ alert('jsPDF no disponible'); return; }
   const doc = new jsPDF({ unit: 'pt', format: 'letter' });
   const margin = 40; let y = 40;
-  const fin = await api.getFinancial(matricula);
+  const fin = await api.getFinancial ? await api.getFinancial(matricula) : { balance: 0, movements: [] };
   doc.setFontSize(16); doc.setTextColor('#0B2545'); doc.text('ALMA - Estado de Cuenta', margin, y); y += 22;
   doc.setFontSize(10); doc.text(`Matrícula: ${matricula}`, margin, y); y += 16;
   doc.text(`Saldo actual: ${((fin.balance||0)).toFixed(2)}`, margin, y); y += 18;
@@ -200,9 +237,23 @@ async function exportAccountPDF(matricula){
 }
 
 function setRoute(route){
-  $$('.view').forEach(v=> v.classList.remove('active'));
+  try{
+    const current = document.querySelector('.view.active');
+    if(current){
+      current.classList.add('fade-out');
+      // after small delay hide it
+      setTimeout(()=>{ try{ current.classList.remove('active','fade-out'); }catch(e){} }, 220);
+    }
+  }catch(e){/* ignore */}
   const view = $(`#view-${route}`) || $('#view-dashboard');
-  view.classList.add('active');
+  if(view){
+    // ensure previous active removed
+    $$('.view').forEach(v=> v.classList.remove('active'));
+    // add fade-in animation then mark active
+    view.classList.add('fade-in');
+    // ensure browser applies animation
+    setTimeout(()=>{ view.classList.add('active'); view.classList.remove('fade-in'); }, 16 + 60);
+  }
   $$('#mainNav .nav-item').forEach(n=> n.classList.toggle('active', n.dataset.route===route));
 }
 
@@ -224,9 +275,9 @@ async function doLogin(){
     console.log('[saes] api.login response', res);
     if(!res) throw new Error('No se recibió respuesta del servidor al intentar autenticar.');
     if(res.role==='student'){
-      session = { role:'student', matricula: res.matricula, name: res.name };
+      session = { role:'student', matricula: res.matricula || res.username, name: res.name || res.displayName || res.username };
     } else if(res.role==='teacher'){
-      session = { role:'teacher', id: res.id, name: res.name };
+      session = { role:'teacher', id: res.id || res.username, name: res.name || res.displayName || res.username };
     }
     sessionStorage.setItem('saes_session', JSON.stringify(session));
     // Exit auth-only mode so the rest of the app/nav becomes visible
@@ -268,7 +319,7 @@ async function awaitRender(){
 
   // Load summary and grades
   if(session.role === 'student'){
-    const sum = await api.getSummary(session.matricula);
+    const sum = api.getSummary ? await api.getSummary(session.matricula) : null;
     if(sum){
       const gpaEl = $('#gpa'); if(gpaEl) gpaEl.textContent = sum.gpa;
       const periodAvgEl = $('#periodAvg'); if(periodAvgEl) periodAvgEl.textContent = sum.periodAverage;
@@ -278,28 +329,24 @@ async function awaitRender(){
     }
     try{ renderGrades(await api.getGrades(session.matricula)); }catch(e){ console.warn('renderGrades failed', e); }
     try{ renderNotifications(await api.getNotifications(session.matricula)); }catch(e){ console.warn('renderNotifications failed', e); }
-    const fin = await api.getFinancial(session.matricula);
+    const fin = api.getFinancial ? await api.getFinancial(session.matricula) : { balance:0 };
     const balEl = $('#balance'); if(balEl) balEl.textContent = (fin.balance||0).toFixed(2);
   }
   // If dual demo session, also populate the dual view elements
   if(session.role === 'dual'){
-    const sum = await api.getSummary(session.matricula);
+    const sum = api.getSummary ? await api.getSummary(session.matricula) : null;
     if(sum){ const gpaDual = $('#gpa_dual'); if(gpaDual) gpaDual.textContent = sum.gpa; }
     try{
       const grades = await api.getGrades(session.matricula);
       const tbody = document.querySelector('#gradesTable_dual tbody');
-      if(tbody){ tbody.innerHTML = grades.map(g=>`<tr><td>${g.nombreMateria}</td><td>${g.profesor}</td><td>${g.final}</td></tr>`).join(''); }
+      if(tbody){ tbody.innerHTML = grades.map(g=>`<tr><td>${g.nombreMateria||g.materia}</td><td>${g.profesor||''}</td><td>${g.final||''}</td></tr>`).join(''); }
     }catch(e){ console.warn('dual grades failed', e); }
     // initialize teacher capture in the dual panel
     try{
-      // reuse initTeacherCapture but render into #teacherCapture_dual by temporarily swapping ids
-      const original = document.getElementById('teacherCapture');
+      const groups = await api.getGroupsForTeacher(session.id);
+      const students = await api.getStudentsForTeacher(session.id);
       const dual = document.getElementById('teacherCapture_dual');
       if(dual){
-        // create a temp container and call initTeacherCapture logic by setting the id
-        // Safer approach: replicate minimal UI here
-        const groups = await api.getGroupsForTeacher(session.id || (session.role==='dual' && (await api.getStudentsForTeacher(session.id)).length? session.id: 100));
-        const students = await api.getStudentsForTeacher(session.id || 100);
         dual.innerHTML = `
           <div class="form-row"><label>Grupo</label><select id="capGroup_dual"></select></div>
           <div class="form-row"><label>Estudiante</label><select id="capStudent_dual"></select></div>
@@ -309,14 +356,14 @@ async function awaitRender(){
           <div class="form-row"><button id="capSubmit_dual" class="btn">Guardar</button></div>
           <div id="capResult_dual" class="muted mt-8"></div>`;
         const selG = $('#capGroup_dual'); if(selG) selG.innerHTML = (groups||[]).map(g=>`<option value="${g.id}">${g.name}</option>`).join('');
-        const selS = $('#capStudent_dual'); if(selS) selS.innerHTML = (students||[]).map(s=>`<option value="${s.matricula}">${s.nombre} (${s.matricula})</option>`).join('');
+        const selS = $('#capStudent_dual'); if(selS) selS.innerHTML = (students||[]).map(s=>`<option value="${s.matricula||s.username}">${(s.nombre||s.displayName||s.username||s.matricula) || ''}</option>`).join('');
         const submit = document.getElementById('capSubmit_dual'); if(submit) submit.addEventListener('click', async ()=>{
           const matricula = (document.getElementById('capStudent_dual')||{}).value || session.matricula;
           const materia = (document.getElementById('capMateria_dual')||{}).value || 'MateriaDemo';
           const parc = ((document.getElementById('capParciales_dual')||{}).value||'').split(',').map(x=>parseFloat(x.trim())||0);
           const final = parseFloat((document.getElementById('capFinal_dual')||{}).value) || 0;
           const grade = { matricula, materiaId: materia, nombreMateria: materia, profesor: session.name || 'Docente', parciales: parc, final, periodo: '2025-2', estado: final>=6?'Aprobada':'Reprobada'};
-          await api.postGrade(grade);
+          await api.postGrade ? await api.postGrade(grade) : null;
           (document.getElementById('capResult_dual')||{}).textContent = 'Calificación guardada.';
         });
       }
@@ -332,14 +379,21 @@ function doLogout(){
 
 function renderGrades(list){
   const tbody = $('#gradesTable tbody');
+  if(!tbody){
+    // If table doesn't exist, try to find modern container
+    const table = document.getElementById('gradesTable');
+    if(table && table.querySelector('tbody')) table.querySelector('tbody').innerHTML = (list && list.length) ? list.map(g=> `<tr><td>${g.nombreMateria||g.materia}</td><td>${g.profesor||''}</td><td>${(g.parciales||[]).join ? (g.parciales||[]).join(', ') : (g.parciales||'')}</td><td>${g.final||''}</td><td><span class="badge">${g.estado||''}</span></td></tr>`).join('') : '<tr><td colspan="5" class="muted">No hay calificaciones para el periodo seleccionado.</td></tr>';
+    return;
+  }
   if(!list || list.length===0){ tbody.innerHTML = '<tr><td colspan="5" class="muted">No hay calificaciones para el periodo seleccionado.</td></tr>'; return; }
-  tbody.innerHTML = list.map(g=> `<tr><td>${g.nombreMateria}</td><td>${g.profesor}</td><td>${g.parciales.join(', ')}</td><td>${g.final}</td><td><span class="badge">${g.estado}</span></td></tr>`).join('');
+  tbody.innerHTML = list.map(g=> `<tr><td>${g.nombreMateria||g.materia}</td><td>${g.profesor||''}</td><td>${(g.parciales||[]).join ? (g.parciales||[]).join(', ') : (g.parciales||'')}</td><td>${g.final||''}</td><td><span class="badge">${g.estado||''}</span></td></tr>`).join('');
 }
 
 function renderNotifications(list){
   const el = $('#notificationsList');
+  if(!el) return;
   if(!list || list.length===0){ el.innerHTML = '<div class="muted">Sin notificaciones.</div>'; return; }
-  el.innerHTML = list.map(n=> `<div class="notif"><div>${n.message}</div><div class="muted">${new Date(n.date).toLocaleString()}</div></div>`).join('');
+  el.innerHTML = list.map(n=> `<div class="notif"><div>${n.message||n.text}</div><div class="muted">${new Date(n.date).toLocaleString()}</div></div>`).join('');
 }
 
 // Render for requests view
@@ -351,9 +405,9 @@ async function initRequests(){
     const typeEl = $('#reqType'); const descEl = $('#reqDesc');
     const type = typeEl ? typeEl.value : 'otro'; const desc = descEl ? descEl.value.trim() : '';
     const reqResult = $('#reqResult'); if(reqResult) reqResult.textContent = 'Enviando...';
-    const res = await api.postRequest(session.matricula, { type, description: desc });
+    const res = api.postRequest ? await api.postRequest(session.matricula, { type, description: desc }) : { id: 'R'+Date.now() };
     if(reqResult) reqResult.textContent = `Solicitud enviada: ${res.id}`;
-    renderNotifications(await api.getNotifications(session.matricula));
+    renderNotifications(await (api.getNotifications ? api.getNotifications(session.matricula) : []));
   });
 }
 
@@ -371,7 +425,7 @@ function initMap(){
 async function initAccount(){
   const accountSummary = $('#accountSummary');
   if(!session || !session.matricula){ if(accountSummary) accountSummary.textContent = 'Inicia sesión para ver el estado de cuenta.'; return; }
-  const f = await api.getFinancial(session.matricula);
+  const f = api.getFinancial ? await api.getFinancial(session.matricula) : { balance:0, movements:[] };
   if(accountSummary) accountSummary.innerHTML = `Saldo actual: <strong>${(f.balance||0).toFixed(2)}</strong><div class="mt-8">Movimientos (${(f.movements||[]).length}):</div>` +
     `<ul>` + (f.movements||[]).map(m=>`<li>${new Date(m.date).toLocaleDateString()} — ${m.desc||m.description||''} — ${m.amount||0}</li>`).join('') + `</ul>`;
   const accountExport = $('#accountExport'); if(accountExport) accountExport.addEventListener('click', ()=> alert('Exportar movimientos (demo)'));
@@ -395,17 +449,18 @@ async function initTeacherCapture(){
     <div id="capResult" class="muted mt-8"></div>
   `;
   // Load groups and students
-  const groups = await api.getGroupsForTeacher(session.id);
-  const students = await api.getStudentsForTeacher(session.id);
-  const selG = $('#capGroup'); selG.innerHTML = groups.map(g=>`<option value="${g.id}">${g.name}</option>`).join('');
-  const selS = $('#capStudent'); selS.innerHTML = students.map(s=>`<option value="${s.matricula}">${s.nombre} (${s.matricula})</option>`).join('');
-  $('#capSubmit').addEventListener('click', async ()=>{
-    const matricula = $('#capStudent').value; const materia = $('#capMateria').value.trim();
-    const parc = $('#capParciales').value.split(',').map(x=>parseFloat(x.trim())||0);
-    const final = parseFloat($('#capFinal').value)||0;
+  const groups = api.getGroupsForTeacher ? await api.getGroupsForTeacher(session.id) : [];
+  const students = api.getStudentsForTeacher ? await api.getStudentsForTeacher(session.id) : [];
+  const selG = $('#capGroup'); selG && (selG.innerHTML = (groups||[]).map(g=>`<option value="${g.id}">${g.name}</option>`).join(''));
+  const selS = $('#capStudent'); selS && (selS.innerHTML = (students||[]).map(s=>`<option value="${s.matricula||s.username}">${(s.nombre||s.displayName||s.username||s.matricula)}</option>`).join(''));
+  const btn = $('#capSubmit'); if(btn) btn.addEventListener('click', async ()=>{
+    const matricula = ($('#capStudent')||{}).value || session.matricula;
+    const materia = ($('#capMateria')||{}).value.trim() || 'MateriaDemo';
+    const parc = ($('#capParciales')||{}).value.split(',').map(x=>parseFloat(x.trim())||0);
+    const final = parseFloat($('#capFinal')?.value) || 0;
     const grade = { matricula, materiaId: materia, nombreMateria: materia, profesor: session.name, parciales: parc, final, periodo: '2025-2', estado: final>=6 ? 'Aprobada':'Reprobada' };
-    await api.postGrade(grade);
-    $('#capResult').textContent = 'Calificación guardada.';
+    if(api.postGrade) await api.postGrade(grade);
+    $('#capResult') && ($('#capResult').textContent = 'Calificación guardada.');
   });
 }
 
@@ -421,13 +476,18 @@ function onRouteChange(route){
   if(route==='teacher') initTeacherCapture();
 }
 
-// Patch setRoute to call onRouteChange and update URL hash/history
-const _setRoute = setRoute; // keep reference
-setRoute = function(route){
-  try{ _setRoute(route); }catch(e){ console.warn('setRoute error', e); }
-  try{ onRouteChange(route); }catch(e){ console.warn('onRouteChange error', e); }
-  try{ if(window && window.history && window.history.pushState) window.history.pushState({}, '', '#'+route); else location.hash = route; }catch(e){}
-};
+  // Patch setRoute to call onRouteChange and update URL hash/history
+  const _setRoute = (typeof window.setRoute === 'function') ? window.setRoute : function(route){
+    // no-op fallback
+  };
+  // Install global setRoute that delegates to previous one and triggers onRouteChange
+  window.setRoute = function(route){
+    try{ _setRoute(route); }catch(e){ console.warn('setRoute error', e); }
+    try{ onRouteChange(route); }catch(e){ console.warn('onRouteChange error', e); }
+    try{ if(window && window.history && window.history.pushState) window.history.pushState({}, '', '#'+route); else location.hash = route; }catch(e){}
+  };
 
-// Start
-init();
+  // Start
+  init();
+
+})();

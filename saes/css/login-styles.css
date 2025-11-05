@@ -1,0 +1,93 @@
+/* login-styles.css: estilos para login y animaciones (depende de login-design-tokens.css) */
+
+html,body{height:100%; margin:0; font-family:var(--font-ui); background:var(--color-bg); color:var(--color-text); -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale}
+*{box-sizing:border-box}
+
+/* Background watermark (logo.jpeg). Ajusta la ruta si es diferente */
+body::before{
+  content:'';
+  position:fixed; inset:0; z-index:-1;
+  background-image: url('../logo.jpeg');
+  background-repeat:no-repeat; background-position:center; background-size:cover; opacity:0.08; pointer-events:none;
+  filter: saturate(0.95) blur(0.5px);
+}
+
+/* Login hero layout */
+.login-hero{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:48px 16px;
+}
+
+/* Card base: glass/frosted */
+.login-card.minimal{
+  width:100%;
+  max-width:420px;
+  border-radius:var(--radius-lg);
+  padding:22px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.86), rgba(255,255,255,0.78));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-md);
+  margin: 10px auto;
+}
+
+/* Brand */
+.login-brand{display:flex; gap:12px; align-items:center}
+.login-brand .logo{width:46px; height:46px; border-radius:10px; background:linear-gradient(180deg,var(--color-primary), rgba(11,37,69,0.6)); display:inline-flex; align-items:center; justify-content:center; color:#fff; font-weight:700}
+.login-title{font-family:var(--font-display); font-size:28px; line-height:1; margin:0; color:var(--color-primary)}
+.login-sub{color:var(--color-muted); font-size:13px; margin-top:6px}
+
+/* Inputs */
+.form-row{margin-top:12px}
+.form-control{width:100%; padding:12px 14px; border-radius:10px; border:1px solid rgba(11,18,32,0.06); background:rgba(255,255,255,0.9); font-size:15px; color:var(--color-text)}
+.form-control:focus{outline:none; box-shadow:0 8px 24px rgba(11,18,32,0.06); border-color: rgba(11,37,69,0.12)}
+.form-control::placeholder{color: #9AA3B2}
+
+/* Buttons */
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 16px; border-radius:999px; font-weight:700; cursor:pointer; border:0}
+.btn.primary{background:var(--color-primary); color:#fff; box-shadow:0 12px 36px rgba(11,37,69,0.12)}
+.btn.primary:hover{transform:translateY(-2px)}
+.btn.primary:active{transform:translateY(0)}
+.btn.outline{background:transparent; border:1px solid rgba(11,18,32,0.06); color:var(--color-text)}
+
+/* Accessibility focus */
+:focus{outline:none}
+:focus-visible{outline:3px solid rgba(11,37,69,0.12); outline-offset:3px; box-shadow:0 8px 30px rgba(11,37,69,0.06)}
+
+/* Footer micro links */
+.login-footer{margin-top:14px; font-size:13px; color:var(--color-muted)}
+
+/* Animated page welcome (outside card) */
+.page-welcome{position:fixed; top:5vh; left:0; right:0; display:flex; justify-content:center; pointer-events:none; z-index:20; padding:0 20px}
+.page-welcome .welcome-inner{max-width:var(--max-content-width); width:100%; display:flex; justify-content:center; gap:6px}
+.page-welcome .letter{font-family:var(--font-display); font-size:clamp(18px, 3.5vw, 36px); color:var(--color-primary); opacity:0; transform:translateY(14px) scale(0.98); display:inline-block}
+.page-welcome.play .letter{animation: pagePopIn var(--anim-pop) var(--anim-spring) both}
+
+/* Animation keyframes */
+@keyframes pagePopIn{
+  0%{opacity:0; transform:translateY(18px) scale(0.96)}
+  60%{opacity:1; transform:translateY(-4px) scale(1.02)}
+  100%{opacity:1; transform:translateY(0) scale(1)}
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce){
+  .page-welcome .letter{animation:none !important; opacity:1; transform:none}
+  .login-card.minimal{transition:none}
+}
+
+/* Responsive */
+@media (max-width:900px){
+  .login-card.minimal{margin:40px auto}
+  .page-welcome{top:3vh}
+}
+
+/* Small visually-hidden helper */
+.visually-hidden{position:absolute !important; height:1px; width:1px; overflow:hidden; clip:rect(1px, 1px, 1px, 1px); white-space:nowrap}
+
+/* Muted small */
+.muted-small{color:var(--color-muted); font-size:13px}

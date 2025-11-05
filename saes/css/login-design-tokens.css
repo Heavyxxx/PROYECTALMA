@@ -1,0 +1,52 @@
+/* login-design-tokens.css
+   Tokens base para A.L.M.A. (colores, espaciado, radios, sombras, tipografías)
+*/
+:root{
+  /* Colors */
+  --color-bg: #F6F7F9;
+  --color-surface: #FFFFFF;
+  --color-primary-hex: #0B2545; /* azul profundo */
+  --color-primary: var(--color-primary-hex);
+  --color-accent: #8B1E2F; /* guinda institucional */
+  --color-text: #111827;
+  --color-muted: #6B7280;
+  --glass-overlay: rgba(255,255,255,0.72);
+
+  /* Semantic */
+  --color-success: #16A34A;
+  --color-danger: #DC2626;
+  --color-warning: #F59E0B;
+
+  /* Spacing scale (px) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  /* Radii */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  /* Elevation / sombras */
+  --shadow-xs: 0 6px 16px rgba(11,18,32,0.04);
+  --shadow-sm: 0 12px 30px rgba(11,18,32,0.06);
+  --shadow-md: 0 24px 60px rgba(11,18,32,0.10);
+  --glass-border: rgba(11,18,32,0.06);
+
+  /* Motion */
+  --anim-pop: 420ms;
+  --anim-fade: 420ms;
+  --anim-spring: cubic-bezier(.2,.9,.2,1);
+
+  /* Typography (fallbacks incluidas) */
+  --font-display: "Playfair Display", serif;
+  --font-ui: Inter, Roboto, system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+  /* Small helpers */
+  --max-content-width: 1200px;
+}

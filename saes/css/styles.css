@@ -17,6 +17,25 @@
 .topbar .search input{width:100%; max-width:520px; padding:10px 14px; border-radius:12px; border:1px solid var(--glass-border); background:rgba(255,255,255,0.9)}
 .topbar .top-actions{display:flex; gap:12px; align-items:center}
 
+/* Global animation helpers and microinteractions */
+.skeleton{background:linear-gradient(90deg, rgba(0,0,0,0.04), rgba(0,0,0,0.02)); border-radius:8px; min-height:12px}
+.animate-in{animation: popIn var(--anim-pop) var(--anim-spring) both}
+.fade-in{animation: fadeInUp var(--anim-fade) ease both}
+.float-slow{animation: float 4s ease-in-out infinite}
+
+/* Buttons */
+.btn{transition: transform var(--timing-fast) var(--easing), box-shadow var(--timing-fast) var(--easing), background-color var(--timing-fast) var(--easing)}
+.btn:active{transform: translateY(1px) scale(0.995)}
+.btn:hover{box-shadow: 0 16px 40px rgba(11,18,32,0.06)}
+
+/* Nav microinteraction */
+.nav .nav-item{transition: transform var(--timing-fast) var(--easing), background var(--timing-fast) var(--easing), box-shadow var(--timing-fast) var(--easing)}
+.nav .nav-item:hover{transform:translateX(6px)}
+
+/* View transition helpers */
+.view.fade-out{opacity:0; transform:translateY(8px); transition: opacity var(--anim-fade) var(--easing), transform var(--anim-fade) var(--easing)}
+.view.fade-in{opacity:0; transform:translateY(8px); animation: fadeInUp var(--anim-fade) var(--easing) both}
+
 /* Page background logo (subtle, non-interactive) */
 html, body{height:100%;}
 body::before{
@@ -39,8 +58,8 @@ body::before{
 body.auth-only::before{opacity: calc(var(--bg-opacity, 0.12) + 0.04)}
 
 /* Layout */
-.layout{display:flex; padding-top:84px}
-.sidebar{width:260px; background:transparent; min-height:calc(100vh - 84px); padding:20px 12px 40px 12px}
+.layout{display:flex; padding-top:72px} /* igual a la altura de .topbar (72px) para evitar espacio extra */
+.sidebar{width:260px; background:transparent; min-height:calc(100vh - 72px); padding:20px 12px 40px 12px}
 .sidebar .panel{background:var(--color-surface); border-radius:12px; padding:12px; box-shadow:var(--shadow-xs)}
 .sidebar .user-mini{display:flex; gap:12px; align-items:center; margin-bottom:12px}
 .avatar-lg{width:56px; height:56px; border-radius:10px; background:var(--color-primary); color:white; display:flex; align-items:center; justify-content:center; font-weight:700}
@@ -50,6 +69,17 @@ body.auth-only::before{opacity: calc(var(--bg-opacity, 0.12) + 0.04)}
 .nav .nav-item:hover{background:linear-gradient(90deg, rgba(139,30,47,0.06), rgba(11,37,69,0.02)); transform:translateX(4px)}
 .nav .nav-item:focus{outline:3px solid rgba(139,30,47,0.12); outline-offset:2px}
 .nav .nav-item.active{background:linear-gradient(90deg, rgba(139,30,47,0.12), rgba(11,37,69,0.04)); box-shadow:var(--shadow-xs)}
+
+/* Focus styles for accessibility (keyboard users) */
+.nav .nav-item:focus-visible,
+.btn:focus-visible,
+.form-control:focus-visible{
+  outline: 3px solid rgba(139,30,47,0.18);
+  outline-offset: 3px;
+  box-shadow: 0 6px 18px rgba(139,30,47,0.06);
+}
+
+.nav .nav-item[tabindex]{cursor:pointer}
 
 .content{flex:1; padding:24px}
 .grid{display:grid; grid-template-columns: 2fr 1fr; gap:20px}
@@ -62,7 +92,7 @@ body.auth-only::before{opacity: calc(var(--bg-opacity, 0.12) + 0.04)}
 .welcome-left{flex:1}
 .welcome-title{font-size:20px; color:var(--color-primary); font-weight:700}
 .welcome-sub{color:var(--color-muted); margin-top:6px}
-.welcome-actions{display:flex; gap:10px; margin-top:12px}
+.welcome-actions{display:flex; gap:10px}
 .welcome-right{display:flex; gap:14px; align-items:center}
 .welcome-avatar{width:64px; height:64px; border-radius:10px; background:var(--color-accent); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:18px}
 .welcome-stats .kpi-value{font-size:18px}
@@ -221,7 +251,7 @@ body.auth-only #view-login .card{margin:80px auto}
   box-shadow: var(--shadow-lg);
 }
 .login-card.minimal .login-brand{display:flex; flex-direction:column; align-items:center; gap:6px; margin-bottom:8px}
-.login-card.minimal .login-title{font-size:30px; font-weight:700; letter-spacing:6px; color:var(--color-text); margin:0; text-align:center; line-height:1}
+.login-card.minimal .login-title{font-size:24px; font-weight:700; letter-spacing:2px; color:var(--color-text); margin:0; text-align:center; line-height:1}
 .login-card.minimal .login-sub{font-size:12px; color:var(--color-muted); margin:0; max-width:260px; text-align:center; line-height:1.15; opacity:0.95}
 .login-card.minimal .card-body{padding-top:8px; display:flex; flex-direction:column; align-items:stretch}
 .login-card.minimal .form-row{margin-bottom:12px}
@@ -268,10 +298,17 @@ body.auth-only #view-login .card{margin:80px auto}
 }
 
 /* --- Page-level welcome (big elegant letters outside login) --- */
-.page-welcome{position:fixed; top:8vh; left:0; right:0; display:flex; justify-content:center; align-items:center; pointer-events:none; z-index:30}
-.page-welcome .welcome-inner{display:flex; gap:6px; align-items:flex-end}
+.page-welcome{position:fixed; top:6vh; left:0; right:0; display:flex; justify-content:center; align-items:center; pointer-events:none; z-index:30; padding:0 20px; box-sizing:border-box}
+.page-welcome .welcome-inner{display:flex; gap:6px; align-items:flex-end; max-width:1180px; width:100%; padding:0 12px; margin:0 auto}
 .page-welcome .letter{font-family: 'Playfair Display', serif; font-weight:700; color:var(--color-primary-2); display:inline-block; opacity:0; transform:translateY(18px) scale(0.96);}
-.page-welcome .letter.large{font-size:clamp(28px, 6vw, 56px); letter-spacing:0.6px}
+.page-welcome .letter.large{font-size:clamp(18px, 4vw, 36px); letter-spacing:0.5px}
+.page-welcome.page-welcome-static .letter.large{
+  font-size: clamp(28px, 5.2vw, 48px);
+  font-weight:700;
+  letter-spacing:0.6px;
+  font-family: 'Playfair Display', serif;
+  color:var(--color-primary-2);
+}
 .page-welcome .letter.punctuation{font-size:clamp(18px, 3vw, 28px); opacity:0.9}
 .page-welcome.play .letter{animation:pagePopIn 520ms cubic-bezier(.2,.9,.2,1) forwards}
 
@@ -287,4 +324,22 @@ body.auth-only #view-login .card{margin:80px auto}
 @media (prefers-reduced-motion: reduce){
   .page-welcome .letter{opacity:1; transform:none; animation:none}
 }
+
+@media (max-width:600px){
+  .page-welcome{top:4vh; padding:0 12px}
+  .page-welcome .welcome-inner{padding:0 8px}
+  .page-welcome .letter.large{font-size:clamp(16px, 5.5vw, 28px)}
+}
+
+/* Static welcome: when present keep letters visible and disable animations */
+.page-welcome.page-welcome-static{
+  position: fixed !important; /* lock to viewport */
+  top: 6vh !important;
+  left: 0; right: 0;
+  z-index: 60 !important;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.page-welcome.page-welcome-static .letter{opacity:1; transform:none; animation:none}
+.page-welcome.page-welcome-static .welcome-inner{justify-content:center}
 

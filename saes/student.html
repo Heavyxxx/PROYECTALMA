@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Alumno — A.L.M.A.</title>
+    <link rel="stylesheet" href="css/design-tokens.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <style>
+      /* Page-local: centrar verticalmente el contenido del dashboard del alumno
+         Respetar la topbar fija (72px) y centrar el grid dentro del viewport. */
+      /* Reserve the topbar using margin (so centering isn't offset by padding) */
+      body.student-centered .layout{
+        margin-top:72px !important; /* reserve topbar height */
+        padding-top:0 !important;
+        min-height: calc(100vh - 72px);
+        display:flex;
+        align-items:center; /* centra verticalmente dentro del área restante */
+        justify-content:center;
+      }
+      /* Asegurar que la grid principal no tenga margenes superiores adicionales */
+      body.student-centered .layout .grid{ margin-top:0; width:100%; }
+      /* Mantener la sidebar estirada para que no colapse */
+      body.student-centered .sidebar{align-self:stretch}
+      /* En pantallas pequeñas usamos flujo normal (no centrar) para mejor usabilidad */
+      @media (max-width:1000px){
+        /* On smaller screens, revert to normal flow so content is scannable */
+        body.student-centered .layout{align-items:flex-start; margin-top:84px; min-height:auto}
+      }
+    </style>
+  </head>
+  <body class="shell student-centered">
+    <header class="topbar">
+      <div class="brand">A.L.M.A. — Alumno</div>
+      <div class="top-actions"><button id="btnLogout" class="btn btn-ghost">Cerrar sesión</button></div>
+    </header>
+
+    <nav class="nav" aria-label="Navegación principal" id="mainNav">
+      <a class="nav-item" data-route="dashboard" role="button" tabindex="0">Dashboard</a>
+      <a class="nav-item" data-route="schedule" role="button" tabindex="0">Horario</a>
+      <a class="nav-item" data-route="requests" role="button" tabindex="0">Trámites</a>
+      <a class="nav-item" data-route="account" role="button" tabindex="0">Cuenta</a>
+    </nav>
+
+    <div class="layout">
+      <div class="grid">
+        <div class="main-col">
+          <!-- Welcome / resumen -->
+          <section class="card welcome-card animate-in" aria-labelledby="userGreeting">
+            <div class="card-body welcome-inner">
+              <div class="welcome-left">
+                <h2 id="userGreeting" style="margin:0">Bienvenido, Alumno</h2>
+                <div class="welcome-sub">Resumen académico</div>
+                <div class="welcome-actions mt-8">
+                  <button id="downloadTira" class="btn small">Descargar Tira (PDF)</button>
+                  <button id="exportGrades" class="btn outline small">Exportar CSV</button>
+                </div>
+              </div>
+              <div class="welcome-right">
+                <div class="kpi">
+                  <div class="value" id="gpa">—</div>
+                  <div class="label">GPA</div>
+                </div>
+                <div class="kpi">
+                  <div class="value" id="credits">—</div>
+                  <div class="label">Créditos</div>
+                </div>
+                <div class="welcome-avatar" id="avatarLg">AL</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Calificaciones -->
+          <section class="card" aria-labelledby="gradesHeading">
+            <div class="card-header">
+              <div id="gradesHeading" style="font-weight:700">Calificaciones — Historial</div>
+              <div class="card-actions"><label class="visually-hidden" for="periodSelect">Periodo</label><select id="periodSelect" class="form-control">
+                <option value="all">Todos</option>
+                <option value="2025-2">2025-2</option>
+              </select></div>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table" id="gradesTable" aria-describedby="gradesHeading">
+                  <thead>
+                    <tr><th>Materia</th><th>Profesor</th><th>Parciales</th><th>Final</th><th>Estado</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td colspan="5" class="muted">Cargando calificaciones…</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- Timeline / eventos del día -->
+          <section class="card">
+            <div class="card-header"><div style="font-weight:700">Tu día</div></div>
+            <div class="card-body" id="timelineWidget">Cargando eventos…</div>
+          </section>
+        </div>
+
+        <aside class="side-col">
+          <!-- Notificaciones -->
+          <section class="card">
+            <div class="card-header"><div style="font-weight:700">Notificaciones</div></div>
+            <div class="card-body" id="notificationsList">Sin notificaciones.</div>
+          </section>
+
+          <!-- Trámites rápidos -->
+          <section class="card">
+            <div class="card-header"><div style="font-weight:700">Trámites</div></div>
+            <div class="card-body">
+              <form id="reqForm">
+                <div class="form-row"><label class="form-label" for="reqType">Tipo</label>
+                  <select id="reqType" class="form-control"><option value="constancia">Constancia</option><option value="baja">Baja temporal</option><option value="otro">Otro</option></select>
+                </div>
+                <div class="form-row"><label class="form-label" for="reqDesc">Detalles</label>
+                  <textarea id="reqDesc" class="form-control" rows="2" placeholder="Breve descripción"></textarea>
+                </div>
+                <div class="form-row"><button type="button" id="reqSubmit" class="btn">Enviar solicitud</button></div>
+                <div id="reqResult" class="muted-small mt-8" aria-live="polite"></div>
+              </form>
+            </div>
+          </section>
+        </aside>
+      </div>
+
+      <!-- Área secundaria: trámites y lista de envíos (compacta) -->
+      <div style="max-width:1200px; margin:18px auto; width:100%">
+        <section class="card">
+          <div class="card-header"><div style="font-weight:700">Trámites enviados</div></div>
+          <div class="card-body"><ul id="tramitesList" style="margin:0;padding-left:0;list-style:none"></ul></div>
+        </section>
+      </div>
+
+    </div>
+
+    <script src="js/api-mock.js"></script>
+    <script src="js/toast.js"></script>
+    <script src="js/app-motion.js"></script>
+    <script src="js/alma-bot.js"></script>
+    <script src="js/student.js"></script>
+    <script>
+      // Logout fallback
+      const btnLogout = document.getElementById('btnLogout'); if(btnLogout) btnLogout.addEventListener('click', ()=>{ sessionStorage.removeItem('saes_session'); window.location.href = 'index.html'; });
+    </script>
+  </body>
+</html>

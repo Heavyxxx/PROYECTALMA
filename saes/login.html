@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>A.L.M.A. — Login</title>
+  <link rel="stylesheet" href="css/login-design-tokens.css">
+  <link rel="stylesheet" href="css/login-styles.css">
+</head>
+<body class="auth-only">
+  <!-- Page-level animated welcome (outside card) -->
+  <div id="pageWelcome" class="page-welcome" aria-hidden="false" aria-label="Bienvenida visual">
+    <!-- El JS insertará las letras aquí (respeta reduced-motion) -->
+  </div>
+
+  <main class="login-hero" role="main">
+    <div class="login-illustration" aria-hidden="true">
+      <!-- opcional: ilustración o SVG -->
+    </div>
+
+    <div class="login-card-wrap">
+      <form id="loginForm" class="login-card minimal" aria-labelledby="brandTitle" autocomplete="on" novalidate>
+        <div class="login-brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div>
+            <h1 id="brandTitle" class="login-title" style="font-family: 'Playfair Display', serif;">A.L.M.A.</h1>
+            <div class="login-sub">Administración Lógica y Modular Académica</div>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <label for="loginUser" class="visually-hidden">Usuario o matrícula</label>
+          <div class="form-row">
+            <input id="loginUser" name="loginUser" class="form-control with-icon" type="text" placeholder="Usuario / Matrícula" inputmode="text" aria-label="Usuario o matrícula" required />
+          </div>
+
+          <label for="loginPass" class="visually-hidden">Contraseña</label>
+          <div class="form-row">
+            <input id="loginPass" name="loginPass" class="form-control" type="password" placeholder="Contraseña" aria-label="Contraseña" required />
+          </div>
+
+          <div class="login-actions">
+            <button id="loginSubmit" class="btn primary" type="submit" aria-label="Acceder">Acceder</button>
+          </div>
+
+          <div class="login-footer" style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+            <a href="#" class="muted-small" id="forgotLink">¿Olvidaste tu contraseña?</a>
+            <a href="#" class="muted-small">Ayuda</a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script src="js/login.js" defer></script>
+</body>
+</html>
