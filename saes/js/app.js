@@ -16,6 +16,11 @@ function init(){
   // Login: prefer inline login form (#loginForm). If a modal/button exists, wire it defensively.
   const loginForm = $('#loginForm');
   if(loginForm){ loginForm.addEventListener('submit', (ev)=>{ ev.preventDefault(); doLogin(); }); }
+  // Also attach click to the login form submit button to be defensive
+  try{
+    const loginBtn = document.querySelector('#loginForm button[type="submit"]');
+    if(loginBtn) loginBtn.addEventListener('click', (ev)=>{ ev.preventDefault(); doLogin(); });
+  }catch(e){ /* ignore */ }
   const btnLogin = $('#btnLogin'); if(btnLogin) btnLogin.addEventListener('click', ()=> showLogin(true));
   const loginCancel = $('#loginCancel'); if(loginCancel) loginCancel.addEventListener('click', ()=> showLogin(false));
   const loginSubmit = $('#loginSubmit'); if(loginSubmit) loginSubmit.addEventListener('click', doLogin);
@@ -41,7 +46,15 @@ function init(){
 
   // Try restore session from sessionStorage
   const s = sessionStorage.getItem('saes_session');
-  if(s){ session = JSON.parse(s); awaitRender(); }
+  if(s){
+    try{ session = JSON.parse(s); 
+      // If a session exists, exit auth-only view and navigate to their dashboard
+      try{ document.body.classList.remove('auth-only'); }catch(e){}
+      if(session && session.role === 'teacher') setRoute('teacher');
+      else setRoute('dashboard');
+      awaitRender();
+    }catch(e){ console.warn('Failed restoring session', e); }
+  }
 
   // Trigger page-level welcome animation (outside login)
   animatePageWelcome('Bienvenido a A.L.M.A.');
@@ -193,15 +206,23 @@ function setRoute(route){
   $$('#mainNav .nav-item').forEach(n=> n.classList.toggle('active', n.dataset.route===route));
 }
 
+// (routing wrapper moved lower to include onRouteChange)
+
 function showLogin(show){
-  $('#modalLogin').classList.toggle('hidden', !show);
+  const modal = $('#modalLogin');
+  if(!modal) return;
+  modal.classList.toggle('hidden', !show);
 }
 
 async function doLogin(){
-  const user = $('#loginUser').value.trim();
-  const pass = $('#loginPass').value.trim();
+  const user = ($('#loginUser') && $('#loginUser').value) ? $('#loginUser').value.trim() : '';
+  const pass = ($('#loginPass') && $('#loginPass').value) ? $('#loginPass').value.trim() : '';
+  console.log('[saes] doLogin start', { user });
   try{
+    console.log('[saes] calling api.login', { user, passProvided: !!pass });
     const res = await api.login(user, pass);
+    console.log('[saes] api.login response', res);
+    if(!res) throw new Error('No se recibió respuesta del servidor al intentar autenticar.');
     if(res.role==='student'){
       session = { role:'student', matricula: res.matricula, name: res.name };
     } else if(res.role==='teacher'){
@@ -211,12 +232,31 @@ async function doLogin(){
     // Exit auth-only mode so the rest of the app/nav becomes visible
     try{ document.body.classList.remove('auth-only'); }catch(e){}
     showLogin(false);
-    // Redirect to the proper view for the role
-    if(session.role === 'student') setRoute('dashboard');
-    else if(session.role === 'teacher') setRoute('teacher');
-    await awaitRender();
+    // Special demo: allow a 'dual' view showing both student and teacher interfaces
+    const uname = String(user || '').toLowerCase();
+    if(uname === 'ambos' || uname === 'both' || uname === 'demoall'){
+      // mark a demo dual session
+      session = Object.assign({}, session, { role: 'dual' });
+      sessionStorage.setItem('saes_session', JSON.stringify(session));
+      setRoute('dual');
+      // initialize both sides
+      await awaitRender();
+      try{ await initTeacherCapture(); }catch(e){}
+    } else {
+      // Redirect to the proper view for the role
+      if(session.role === 'student') setRoute('dashboard');
+      else if(session.role === 'teacher') setRoute('teacher');
+      await awaitRender();
+    }
+    console.log('[saes] doLogin success', session);
     toast('Sesión iniciada: ' + (session.name||session.id));
-  }catch(err){ alert(err.message); }
+  }catch(err){
+    // Log full error to console for debugging and show user-friendly message
+    console.error('[saes] doLogin failed', err);
+    try{ toast('Error iniciando sesión: ' + (err && err.message ? err.message : 'Error desconocido')); }catch(e){}
+    // also surface alert to ensure the user sees it in environments without visible toasts
+    try{ alert(err && err.message ? err.message : 'Error al iniciar sesión'); }catch(e){ console.error('alert failed', e); }
+  }
 }
 
 async function awaitRender(){
@@ -229,11 +269,58 @@ async function awaitRender(){
   // Load summary and grades
   if(session.role === 'student'){
     const sum = await api.getSummary(session.matricula);
-    if(sum){ $('#gpa').textContent = sum.gpa; $('#periodAvg').textContent = sum.periodAverage; $('#credits').textContent = sum.creditsApproved; $('#currentPeriod').textContent = sum.period || '2025-2'; }
-    renderGrades(await api.getGrades(session.matricula));
-    renderNotifications(await api.getNotifications(session.matricula));
+    if(sum){
+      const gpaEl = $('#gpa'); if(gpaEl) gpaEl.textContent = sum.gpa;
+      const periodAvgEl = $('#periodAvg'); if(periodAvgEl) periodAvgEl.textContent = sum.periodAverage;
+      const creditsEl = $('#credits'); if(creditsEl) creditsEl.textContent = sum.creditsApproved;
+      const currentPeriodEl = $('#currentPeriod'); if(currentPeriodEl) currentPeriodEl.textContent = sum.period || '2025-2';
+      const userGreeting = $('#userGreeting'); if(userGreeting) userGreeting.textContent = sum.name || session.name || 'Alumno';
+    }
+    try{ renderGrades(await api.getGrades(session.matricula)); }catch(e){ console.warn('renderGrades failed', e); }
+    try{ renderNotifications(await api.getNotifications(session.matricula)); }catch(e){ console.warn('renderNotifications failed', e); }
     const fin = await api.getFinancial(session.matricula);
-    $('#balance strong').textContent = ` ${fin.balance.toFixed(2)}`;
+    const balEl = $('#balance'); if(balEl) balEl.textContent = (fin.balance||0).toFixed(2);
+  }
+  // If dual demo session, also populate the dual view elements
+  if(session.role === 'dual'){
+    const sum = await api.getSummary(session.matricula);
+    if(sum){ const gpaDual = $('#gpa_dual'); if(gpaDual) gpaDual.textContent = sum.gpa; }
+    try{
+      const grades = await api.getGrades(session.matricula);
+      const tbody = document.querySelector('#gradesTable_dual tbody');
+      if(tbody){ tbody.innerHTML = grades.map(g=>`<tr><td>${g.nombreMateria}</td><td>${g.profesor}</td><td>${g.final}</td></tr>`).join(''); }
+    }catch(e){ console.warn('dual grades failed', e); }
+    // initialize teacher capture in the dual panel
+    try{
+      // reuse initTeacherCapture but render into #teacherCapture_dual by temporarily swapping ids
+      const original = document.getElementById('teacherCapture');
+      const dual = document.getElementById('teacherCapture_dual');
+      if(dual){
+        // create a temp container and call initTeacherCapture logic by setting the id
+        // Safer approach: replicate minimal UI here
+        const groups = await api.getGroupsForTeacher(session.id || (session.role==='dual' && (await api.getStudentsForTeacher(session.id)).length? session.id: 100));
+        const students = await api.getStudentsForTeacher(session.id || 100);
+        dual.innerHTML = `
+          <div class="form-row"><label>Grupo</label><select id="capGroup_dual"></select></div>
+          <div class="form-row"><label>Estudiante</label><select id="capStudent_dual"></select></div>
+          <div class="form-row"><label>Materia</label><input id="capMateria_dual" /></div>
+          <div class="form-row"><label>Parciales</label><input id="capParciales_dual" /></div>
+          <div class="form-row"><label>Final</label><input id="capFinal_dual" type="number" step="0.1" /></div>
+          <div class="form-row"><button id="capSubmit_dual" class="btn">Guardar</button></div>
+          <div id="capResult_dual" class="muted mt-8"></div>`;
+        const selG = $('#capGroup_dual'); if(selG) selG.innerHTML = (groups||[]).map(g=>`<option value="${g.id}">${g.name}</option>`).join('');
+        const selS = $('#capStudent_dual'); if(selS) selS.innerHTML = (students||[]).map(s=>`<option value="${s.matricula}">${s.nombre} (${s.matricula})</option>`).join('');
+        const submit = document.getElementById('capSubmit_dual'); if(submit) submit.addEventListener('click', async ()=>{
+          const matricula = (document.getElementById('capStudent_dual')||{}).value || session.matricula;
+          const materia = (document.getElementById('capMateria_dual')||{}).value || 'MateriaDemo';
+          const parc = ((document.getElementById('capParciales_dual')||{}).value||'').split(',').map(x=>parseFloat(x.trim())||0);
+          const final = parseFloat((document.getElementById('capFinal_dual')||{}).value) || 0;
+          const grade = { matricula, materiaId: materia, nombreMateria: materia, profesor: session.name || 'Docente', parciales: parc, final, periodo: '2025-2', estado: final>=6?'Aprobada':'Reprobada'};
+          await api.postGrade(grade);
+          (document.getElementById('capResult_dual')||{}).textContent = 'Calificación guardada.';
+        });
+      }
+    }catch(e){ console.warn('init dual teacher failed', e); }
   }
 }
 
@@ -272,9 +359,11 @@ async function initRequests(){
 
 // Map interactivity
 function initMap(){
-  $$('.map-pin').forEach(p=> p.addEventListener('click', (e)=>{
+  const pins = $$('.map-pin');
+  if(!pins || pins.length===0) return;
+  pins.forEach(p=> p.addEventListener('click', (e)=>{
     const aula = e.target.dataset.aula;
-    $('#mapInfo').textContent = `Aula: ${aula} — Ver información o cómo llegar (demo).`;
+    const mi = $('#mapInfo'); if(mi) mi.textContent = `Aula: ${aula} — Ver información o cómo llegar (demo).`;
   }));
 }
 
@@ -291,6 +380,7 @@ async function initAccount(){
 // Teacher capture UI
 async function initTeacherCapture(){
   const container = $('#teacherCapture');
+  if(!container) return;
   if(!session || session.role!=='teacher'){
     container.innerHTML = '<div class="muted">Inicie sesión como docente para capturar calificaciones.</div>';
     return;
@@ -331,9 +421,13 @@ function onRouteChange(route){
   if(route==='teacher') initTeacherCapture();
 }
 
-// Patch setRoute to call onRouteChange
+// Patch setRoute to call onRouteChange and update URL hash/history
 const _setRoute = setRoute; // keep reference
-setRoute = function(route){ _setRoute(route); onRouteChange(route); };
+setRoute = function(route){
+  try{ _setRoute(route); }catch(e){ console.warn('setRoute error', e); }
+  try{ onRouteChange(route); }catch(e){ console.warn('onRouteChange error', e); }
+  try{ if(window && window.history && window.history.pushState) window.history.pushState({}, '', '#'+route); else location.hash = route; }catch(e){}
+};
 
 // Start
 init();

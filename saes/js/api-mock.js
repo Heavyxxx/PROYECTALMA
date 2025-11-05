@@ -34,6 +34,17 @@ function saveData(data){ localStorage.setItem(SAES_STORAGE_KEY, JSON.stringify(d
 const api = {
   login: async (username, password) => {
     const data = loadData();
+    const unameLower = String(username || '').toLowerCase();
+    // Friendly aliases for demo access
+    if(unameLower === 'alumno' || unameLower === 'ambos' || unameLower === 'both' || unameLower === 'demo' || unameLower === 'demoall'){
+      const s0 = data.users.students && data.users.students[0];
+      if(s0 && s0.contrasena === password) return { role: 'student', matricula: s0.matricula, name: s0.nombre };
+    }
+    if(unameLower === 'profesor'){
+      // map alias to first teacher in seed (if exists)
+      const t0 = data.users.teachers && data.users.teachers[0];
+      if(t0 && t0.contrasena === password) return { role: 'teacher', name: t0.nombre, id: t0.id };
+    }
     // teacher by numeric id
     if(!isNaN(Number(username))){
       const t = data.users.teachers.find(x => x.id === Number(username) && x.contrasena === password);

@@ -109,10 +109,27 @@ body.auth-only::before{opacity: calc(var(--bg-opacity, 0.12) + 0.04)}
 .form-actions{display:flex; gap:8px; align-items:center}
 
 /* Tables: improved readability */
-.table-responsive{overflow:auto; border-radius:10px;}
-.table tbody tr:nth-child(even){background:rgba(16,24,40,0.02)}
-.table tbody tr:hover{background:rgba(11,37,69,0.03)}
-.table .badge{background:transparent; color:var(--color-primary); border:1px solid rgba(11,37,69,0.06); padding:4px 8px; border-radius:999px}
+.table-responsive{overflow:auto; border-radius:12px;}
+.table{width:100%; border-collapse:collapse; font-size:15px}
+.table thead th{background:transparent; font-weight:600; color:var(--color-text); text-align:left; padding:12px}
+.table tbody td{padding:12px; border-bottom:1px solid rgba(11,18,32,0.04)}
+.table tbody tr:nth-child(even){background:rgba(11,18,32,0.02)}
+.table tbody tr:hover{background:rgba(11,18,32,0.03); transform:translateX(0)}
+.table .badge{background:transparent; color:var(--color-text); border:1px solid rgba(11,18,32,0.06); padding:6px 10px; border-radius:999px; font-size:13px}
+
+/* Make buttons more 'Apple-style' */
+.btn{border-radius:12px; padding:10px 16px; font-weight:600; letter-spacing:0.2px}
+.btn.small{padding:8px 12px; border-radius:10px}
+.btn.outline{border:1px solid var(--glass-border); background:transparent; color:var(--color-text)}
+.btn:active{transform:translateY(1px) scale(0.998)}
+
+/* Icon button */
+.icon-btn{width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center; border-radius:10px; background:transparent; border:1px solid transparent}
+.icon-btn:hover{background:rgba(11,18,32,0.02); border-color:rgba(11,18,32,0.04)}
+
+/* Card header layout */
+.card-header{display:flex; justify-content:space-between; align-items:center; gap:12px}
+.card-header > div:first-child{font-size:15px}
 
 /* Inputs inside cards spacing */
 .card .form-row{margin-top:10px}

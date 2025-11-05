@@ -48,6 +48,34 @@
         </div>
       </section>
 
+      <!-- DUAL DEMO VIEW: show both student and teacher interfaces side-by-side -->
+      <section id="view-dual" class="view" role="region" aria-label="Demo Dual">
+        <div class="container">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:28px">
+            <div>
+              <div class="card">
+                <h3 style="margin:0 0 8px">Interfaz Estudiante (vista demo)</h3>
+                <div class="text-muted">Resumen y calificaciones</div>
+                <div style="margin-top:12px">
+                  <div class="muted-small">GPA</div>
+                  <div id="gpa_dual" style="font-weight:700; font-size:20px">—</div>
+                  <div class="table-responsive" style="margin-top:12px">
+                    <table class="table" id="gradesTable_dual"><thead><tr><th>Materia</th><th>Profesor</th><th>Final</th></tr></thead><tbody></tbody></table>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="card">
+                <h3 style="margin:0 0 8px">Interfaz Docente (vista demo)</h3>
+                <div class="text-muted">Captura y grupos</div>
+                <div id="teacherCapture_dual" style="margin-top:12px">Cargando herramienta docente...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- STUDENT DASHBOARD -->
       <section id="view-dashboard" class="view" role="region" aria-label="Dashboard">
         <div class="container">
