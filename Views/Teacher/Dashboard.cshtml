@@ -1,0 +1,86 @@
+﻿@using ALMA.Models
+@model IEnumerable<ALMA.Models.Student>
+
+@{
+    ViewData["Title"] = "Panel de Profesor";
+    // Asegurarse de que el Layout principal es el correcto
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-5">
+    <!-- Mensaje de Éxito o Error (si viene de una redirección) -->
+    @if (ViewBag.SuccessMessage != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @ViewBag.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Título y Saludo -->
+    <h1 class="mb-4">
+        Bienvenido, Profesor @ViewBag.TeacherName
+        <small class="text-muted" style="font-size: 0.5em;">(ID: @ViewBag.TeacherId)</small>
+    </h1>
+
+    <hr />
+
+    <!-- Sección de Gestión de Calificaciones y Logout -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Acciones Principales</h5>
+        </div>
+        <div class="card-body d-flex justify-content-between align-items-center">
+            <p class="card-text mb-0">Seleccione un alumno de la lista para gestionar sus notas.</p>
+
+            <!-- Botón para CERRAR SESIÓN -->
+            <a asp-controller="Home" asp-action="Logout" class="btn btn-outline-danger">Cerrar Sesión</a>
+        </div>
+    </div>
+
+    <!-- Lista de Alumnos Asignados -->
+    <h3 class="mt-5 mb-3">Lista de Alumnos</h3>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Matrícula</th>
+                        <th>Nombre Completo</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var student in Model)
+                    {
+                        <tr>
+                            <td>@student.Matricula</td>
+                            <td>@student.Nombre @student.ApellidoPaterno</td>
+                            <td>
+                                <!-- Botón para Asignar/Ver Calificaciones -->
+                                <a asp-controller="Teacher" asp-action="AsignarNota" asp-route-matricula="@student.Matricula" class="btn btn-sm btn-info">
+                                    Gestionar Notas
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning">
+            No tiene alumnos asignados en este momento.
+        </div>
+    }
+</div>

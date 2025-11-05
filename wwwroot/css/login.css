@@ -1,0 +1,135 @@
+﻿/*
+ * Hoja de estilos específica para la vista de Login (Views/Home/Index.cshtml).
+ * Contiene el fondo de pantalla y los estilos base del formulario.
+ */
+
+/* --------------------------------------
+ * 1. Estilos del Cuerpo y Fondo (Body/HTML)
+ * -------------------------------------- */
+html, body {
+    height: 100%;
+    margin: 0;
+    font-family: 'Arial', sans-serif; /* Fuente base */
+}
+
+/* El contenedor principal de la página (fondo) mantiene la imagen full-bleed */
+.login-container {
+    /* Usa la imagen cargada por el usuario como fondo */
+    background-image: url('../images/rosario2.jpg');
+    background-size: cover; /* Asegura que la imagen cubra toda la pantalla */
+    background-position: center center; /* Centra la imagen */
+    background-repeat: no-repeat; /* Evita que la imagen se repita */
+    background-attachment: fixed; /* Fija la imagen al viewport para cubrir siempre */
+    /* Configuración para centrar la tarjeta */
+    width: 100%;
+    height: 100vh; /* ocupa toda la altura de la ventana */
+    position: relative;
+    z-index: 1; /* Necesario para que el pseudo-elemento funcione */
+    /* Color de respaldo por si la imagen no está disponible */
+    background-color: #222;
+}
+
+/* Overlay oscuro para mejorar contraste */
+.login-container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.6);
+    z-index: 2;
+}
+
+/* --------------------------------------
+ * 2. Estilos de la Tarjeta de Login (Minimalista y con desenfoque)
+ * -------------------------------------- */
+/* Tarjeta de login centrada y desplazada a la derecha (ajustada más a la derecha) */
+.custom-card {
+    position: absolute; /* posicionada respecto a .login-container */
+    top: 50%;
+    left: 70%; /* empujada más a la derecha */
+    transform: translate(-50%, -50%); /* centra exactamente y luego el 'left' la empuja a la derecha */
+    z-index: 3; /* encima del overlay */
+    width: 260px; /* tamaño compacto */
+    max-width: 260px;
+    padding: 12px !important; /* padding reducido */
+    /* Fondo semitransparente con efecto de desenfoque (glassmorphism) */
+    background-color: rgba(255,255,255,0.30);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    border-radius: 12px;
+    /* borde sutil para definir el contorno sobre la imagen */
+    border: 1px solid rgba(255,255,255,0.12);
+    /* sombra sutil para dar profundidad */
+    box-shadow: 06px 18px rgba(0,0,0,0.18);
+    color: rgba(0,0,0,0.9);
+}
+
+/* --------------------------------------
+ * 3. Estilos de Tipografía y Formulario
+ * -------------------------------------- */
+/* Tipografía y tamaños más compactos */
+.card-title {
+    font-size: 1.15rem; /* tamaño suficiente para A.L.M.A. */
+    font-weight: 800;
+    color: #0b2540;
+    margin-bottom: 6px !important;
+    text-align: center;
+    letter-spacing: 2px; /* hace que A.L.M.A. respire visualmente */
+}
+
+/* Estilo para el significado de las siglas (A.L.M.A.) */
+.custom-card .card-subtitle {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: #000000 !important; /* fuerza el color negro para máxima visibilidad */
+    margin-bottom: 12px !important;
+    text-transform: none;
+    letter-spacing: 0.2px;
+    line-height: 1.1;
+    text-align: center;
+}
+
+/* Campos más compactos */
+.form-control {
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 6px 10px;
+    font-size: 0.9rem;
+    background-color: rgba(255,255,255,0.9);
+}
+
+/* Estilo del botón principal */
+.custom-btn {
+    background-color: #7b1120; /* vino tinto */
+    border: none;
+    border-radius:20px; /* más redondeado */
+    padding:8px0;
+    font-weight:600;
+    font-size:0.95rem;
+    transition: background-color0.2s ease, transform0.12s ease, box-shadow0.12s ease;
+    box-shadow:06px12px rgba(123,17,32,0.18); /* sombra sutil acorde al color */
+    color: #fff;
+}
+
+.custom-btn:hover {
+    background-color: #5a0b14; /* vino más oscuro al pasar el ratón */
+    transform: translateY(-2px);
+    box-shadow:010px20px rgba(90,11,20,0.18);
+}
+
+/* Ajuste para pantallas pequeñas: mantener tarjeta accesible */
+@media (max-width:480px) {
+    .custom-card {
+        left: 50%;
+        top: 48px;
+        transform: translate(-50%, 0);
+        width: calc(100% - 28px);
+        max-width: none;
+        background-color: rgba(255,255,255,0.95); /* menos blur en móviles para rendimiento */
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+}

@@ -1,0 +1,51 @@
+﻿@using ALMA.Models
+@{
+    // Esta línea se asegura de que el CSS de login.css se cargue solo en esta página
+    ViewData["Title"] = "Acceso ALMA";
+    Layout = "_Layout"; // Usamos la plantilla principal
+    ViewData["HideNavbar"] = true; // Oculta la barra de navegación en esta vista
+}
+
+<link rel="stylesheet" href="~/css/login.css" />
+
+<div class="login-container">
+    <div class="card shadow-lg p-3 custom-card">
+        <div class="card-body">
+            <h3 class="card-title text-center mb-2">A.L.M.A.</h3>
+            <span class="card-subtitle mb-3 text-center">Administración y Logística Modular Académica</span>
+
+            <!-- El formulario POST envía los datos al método Login en HomeController -->
+            <form asp-controller="Home" asp-action="Login" method="post">
+
+                <!-- Campo de Matrícula / ID Profesor -->
+                <div class="form-group mb-2">
+                    <label for="id">Usuario</label>
+                    <input type="text" class="form-control" id="id" name="id" required>
+                </div>
+
+                <!-- Campo de Contraseña -->
+                <div class="form-group mb-3">
+                    <label for="password">Contraseña</label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                </div>
+
+                <!-- Botón de Acceso -->
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-block custom-btn">Acceder</button>
+                </div>
+
+                <!-- Mostrar mensajes de error (si existen) -->
+                @if (ViewBag.ErrorMessage != null)
+                {
+                    <div class="alert alert-danger mt-3 text-center" role="alert">
+                        @ViewBag.ErrorMessage
+                    </div>
+                }
+            </form>
+
+            <div class="text-center mt-3">
+                <small class="text-muted">Desarrollado para la gestión educativa.</small>
+            </div>
+        </div>
+    </div>
+</div>
