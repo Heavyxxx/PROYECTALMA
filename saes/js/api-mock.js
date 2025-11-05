@@ -120,4 +120,5 @@ const api = {
   }
 };
 
-export default api;
+// Expose API for non-module usage in this demo
+window.api = api;

@@ -1,4 +1,5 @@
-import api from './api-mock.js';
+// Use the global api provided by js file (api-mock.js exposes window.api)
+const api = window.api;
 
 let session = null; // {role, matricula, name}
 
@@ -8,12 +9,18 @@ const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
 // Init
 function init(){
-  // Hook nav
-  $$('#mainNav .nav-item').forEach(el=> el.addEventListener('click', (e)=>{ setRoute(el.dataset.route); }));
-  $('#btnLogin').addEventListener('click', ()=> showLogin(true));
-  $('#loginCancel').addEventListener('click', ()=> showLogin(false));
-  $('#loginSubmit').addEventListener('click', doLogin);
-  $('#exportGrades').addEventListener('click', async ()=>{
+  // Hook nav (if present)
+  const navItems = $$('#mainNav .nav-item');
+  if(navItems && navItems.length) navItems.forEach(el=> el.addEventListener('click', (e)=>{ setRoute(el.dataset.route); }));
+
+  // Login: prefer inline login form (#loginForm). If a modal/button exists, wire it defensively.
+  const loginForm = $('#loginForm');
+  if(loginForm){ loginForm.addEventListener('submit', (ev)=>{ ev.preventDefault(); doLogin(); }); }
+  const btnLogin = $('#btnLogin'); if(btnLogin) btnLogin.addEventListener('click', ()=> showLogin(true));
+  const loginCancel = $('#loginCancel'); if(loginCancel) loginCancel.addEventListener('click', ()=> showLogin(false));
+  const loginSubmit = $('#loginSubmit'); if(loginSubmit) loginSubmit.addEventListener('click', doLogin);
+  const exportGradesBtn = $('#exportGrades');
+  if(exportGradesBtn) exportGradesBtn.addEventListener('click', async ()=>{
     if(!session || !session.matricula) return alert('Inicia sesión');
     const csv = await api.exportGradesCSV(session.matricula);
     const blob = new Blob([csv], {type:'text/csv'});
@@ -35,6 +42,73 @@ function init(){
   // Try restore session from sessionStorage
   const s = sessionStorage.getItem('saes_session');
   if(s){ session = JSON.parse(s); awaitRender(); }
+
+  // Trigger page-level welcome animation (outside login)
+  animatePageWelcome('Bienvenido a A.L.M.A.');
+}
+
+// Create and animate page-level welcome text (big, elegant letters)
+function animatePageWelcome(text){
+  const container = document.getElementById('pageWelcome');
+  if(!container) return;
+  // Respect reduced motion
+  const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+  container.innerHTML = '';
+  const inner = document.createElement('div'); inner.className = 'welcome-inner';
+  // Split text into chars keeping spaces
+  const chars = Array.from(text);
+  chars.forEach((ch, i)=>{
+    const span = document.createElement('span');
+    span.className = 'letter';
+    // Larger letters for letters, smaller for punctuation/space
+    if(ch.match(/[A-Za-zÁÉÍÓÚÑáéíóúñ]/)) span.classList.add('large');
+    if(ch.trim()==='') span.classList.add('punctuation');
+    span.textContent = ch;
+    // stagger delay
+    const delay = i * 70; // ms
+    span.style.setProperty('--delay', delay + 'ms');
+    inner.appendChild(span);
+  });
+  container.appendChild(inner);
+  // Ensure container is visible to assistive tech and visually
+  try{ container.removeAttribute('aria-hidden'); }catch(e){}
+  container.style.visibility = 'visible';
+  // trigger animation after small timeout so CSS can pick up animation-delay
+  // Only run the animation the first time per session
+  const shownFlag = sessionStorage.getItem('saes_welcome_shown');
+  if(mq && mq.matches){
+    // reduced motion -> show static and mark as shown
+    container.querySelectorAll('.letter').forEach(s => { s.style.opacity = '1'; s.style.transform = 'none'; });
+    sessionStorage.setItem('saes_welcome_shown', '1');
+    return;
+  }
+
+  if(!shownFlag){
+    setTimeout(()=>{
+      container.classList.add('play');
+      // mark as shown for this session so it won't replay on reload
+      sessionStorage.setItem('saes_welcome_shown', '1');
+    }, 120);
+  } else {
+    // Already shown this session: reveal letters statically (no animation)
+    container.querySelectorAll('.letter').forEach(s => { s.style.opacity = '1'; s.style.transform = 'none'; });
+  }
+
+  // Fallback: if for some reason letters are not rendering (font not loaded or CSS conflict), insert a plain H1
+  setTimeout(()=>{
+    const anyVisible = Array.from(container.querySelectorAll('.letter')).some(el => el.offsetWidth > 0 || el.offsetHeight > 0);
+    if(!anyVisible){
+      const fallback = document.createElement('h1');
+      fallback.className = 'page-welcome-fallback display-serif';
+      fallback.textContent = text;
+      fallback.style.margin = '0';
+      fallback.style.opacity = '0.98';
+      fallback.style.color = 'var(--color-primary-2)';
+      fallback.style.fontSize = 'clamp(24px, 6vw, 56px)';
+      fallback.style.letterSpacing = '0.6px';
+      container.innerHTML = ''; container.appendChild(fallback);
+    }
+  }, 300);
 }
 
 // Sidebar toggle for small screens (show/hide)
@@ -134,7 +208,12 @@ async function doLogin(){
       session = { role:'teacher', id: res.id, name: res.name };
     }
     sessionStorage.setItem('saes_session', JSON.stringify(session));
+    // Exit auth-only mode so the rest of the app/nav becomes visible
+    try{ document.body.classList.remove('auth-only'); }catch(e){}
     showLogin(false);
+    // Redirect to the proper view for the role
+    if(session.role === 'student') setRoute('dashboard');
+    else if(session.role === 'teacher') setRoute('teacher');
     await awaitRender();
     toast('Sesión iniciada: ' + (session.name||session.id));
   }catch(err){ alert(err.message); }
@@ -142,12 +221,10 @@ async function doLogin(){
 
 async function awaitRender(){
   // Update header / user mini
-  $('#userName').textContent = session.name || 'Usuario';
-  $('#userMatricula').textContent = session.matricula || '';
-  $('#avatarLg').textContent = (session.name||'U').split(' ').map(s=>s[0]).join('').slice(0,2).toUpperCase();
-  $('#btnLogin').textContent = 'Cerrar sesión';
-  $('#btnLogin').removeEventListener('click', ()=> showLogin(true));
-  $('#btnLogin').addEventListener('click', doLogout);
+  const userNameEl = $('#userName'); if(userNameEl) userNameEl.textContent = session.name || 'Usuario';
+  const userMatEl = $('#userMatricula'); if(userMatEl) userMatEl.textContent = session.matricula || '';
+  const avatarLgEl = $('#avatarLg'); if(avatarLgEl) avatarLgEl.textContent = (session.name||'U').split(' ').map(s=>s[0]).join('').slice(0,2).toUpperCase();
+  const btnLoginEl = $('#btnLogin'); if(btnLoginEl){ btnLoginEl.textContent = 'Cerrar sesión'; try{ btnLoginEl.removeEventListener('click', ()=> showLogin(true)); }catch(e){} btnLoginEl.addEventListener('click', doLogout); }
 
   // Load summary and grades
   if(session.role === 'student'){
@@ -161,7 +238,9 @@ async function awaitRender(){
 }
 
 function doLogout(){
-  session = null; sessionStorage.removeItem('saes_session'); location.reload();
+  session = null; sessionStorage.removeItem('saes_session');
+  try{ document.body.classList.add('auth-only'); }catch(e){}
+  location.reload();
 }
 
 function renderGrades(list){
@@ -178,12 +257,15 @@ function renderNotifications(list){
 
 // Render for requests view
 async function initRequests(){
-  $('#reqSubmit').addEventListener('click', async ()=>{
+  const reqSubmit = $('#reqSubmit');
+  if(!reqSubmit) return;
+  reqSubmit.addEventListener('click', async ()=>{
     if(!session || !session.matricula) return alert('Inicia sesión');
-    const type = $('#reqType').value; const desc = $('#reqDesc').value.trim();
-    $('#reqResult').textContent = 'Enviando...';
+    const typeEl = $('#reqType'); const descEl = $('#reqDesc');
+    const type = typeEl ? typeEl.value : 'otro'; const desc = descEl ? descEl.value.trim() : '';
+    const reqResult = $('#reqResult'); if(reqResult) reqResult.textContent = 'Enviando...';
     const res = await api.postRequest(session.matricula, { type, description: desc });
-    $('#reqResult').textContent = `Solicitud enviada: ${res.id}`;
+    if(reqResult) reqResult.textContent = `Solicitud enviada: ${res.id}`;
     renderNotifications(await api.getNotifications(session.matricula));
   });
 }
@@ -198,11 +280,12 @@ function initMap(){
 
 // Account view
 async function initAccount(){
-  if(!session || !session.matricula) { $('#accountSummary').textContent = 'Inicia sesión para ver el estado de cuenta.'; return; }
+  const accountSummary = $('#accountSummary');
+  if(!session || !session.matricula){ if(accountSummary) accountSummary.textContent = 'Inicia sesión para ver el estado de cuenta.'; return; }
   const f = await api.getFinancial(session.matricula);
-  $('#accountSummary').innerHTML = `Saldo actual: <strong>${(f.balance||0).toFixed(2)}</strong><div class="mt-8">Movimientos (${(f.movements||[]).length}):</div>` +
+  if(accountSummary) accountSummary.innerHTML = `Saldo actual: <strong>${(f.balance||0).toFixed(2)}</strong><div class="mt-8">Movimientos (${(f.movements||[]).length}):</div>` +
     `<ul>` + (f.movements||[]).map(m=>`<li>${new Date(m.date).toLocaleDateString()} — ${m.desc||m.description||''} — ${m.amount||0}</li>`).join('') + `</ul>`;
-  $('#accountExport').addEventListener('click', ()=> alert('Exportar movimientos (demo)'));
+  const accountExport = $('#accountExport'); if(accountExport) accountExport.addEventListener('click', ()=> alert('Exportar movimientos (demo)'));
 }
 
 // Teacher capture UI
@@ -242,6 +325,10 @@ function onRouteChange(route){
   if(route==='schedule') initMap();
   if(route==='account') initAccount();
   if(route==='grades') initTeacherCapture();
+  // Dashboard route: refresh student content
+  if(route==='dashboard') awaitRender();
+  // Teacher route: initialize teacher tools
+  if(route==='teacher') initTeacherCapture();
 }
 
 // Patch setRoute to call onRouteChange

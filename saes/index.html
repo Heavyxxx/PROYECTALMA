@@ -3,206 +3,190 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>SAES — Portal Estudiantil (Demo)</title>
-  <link rel="stylesheet" href="/saes/css/design-tokens.css" />
-  <link rel="stylesheet" href="/saes/css/styles.css" />
+  <title>A.L.M.A. — SAES (demo)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;600;700;900&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/design-tokens.css">
+  <link rel="stylesheet" href="css/styles.css">
 </head>
-<body>
-  <div id="app" class="app-root">
-    <header class="topbar" role="banner">
-      <div class="container">
-        <div class="brand" aria-label="ALMA">
-          <div class="logo">AL</div>
-          <div class="brand-text">ALMA</div>
-        </div>
-        <div class="search" role="search">
-          <input id="globalSearch" placeholder="Buscar materia, profesor o trámite..." aria-label="Buscar" />
-        </div>
-        <div class="top-actions">
-          <button id="btnNotifications" class="icon-btn" aria-label="Notificaciones">🔔<span class="badge" id="notifBadge">0</span></button>
-          <div id="userMenuWrap" style="display:flex;align-items:center;gap:8px">
-            <div id="userAvatar" class="avatar-lg" aria-hidden="true">—</div>
-            <button id="btnLogin" class="btn small" aria-haspopup="dialog">Iniciar sesión</button>
-          </div>
-        </div>
-      </div>
-    </header>
+<body class="auth-only">
+  <div class="app-root">
+    <!-- Page-level welcome (outside the login card) -->
+    <div id="pageWelcome" class="page-welcome" aria-hidden="true"></div>
+    <main id="content">
+      <!-- ONLY LOGIN CARD -->
+      <section id="view-login" class="view active" role="region" aria-label="Login">
+        <div class="login-hero">
+          <div class="login-card-wrap">
+            <div class="login-card minimal animate-in" id="loginCard">
+              <div class="animated-welcome page" id="animatedWelcomePage" aria-hidden="true"></div>
 
-    <div class="layout container">
-      <aside class="sidebar" id="sidebar" aria-label="Navegación principal">
-        <div class="panel">
-          <div class="user-mini" id="userMini">
-            <div class="avatar-lg" id="avatarLg">—</div>
-            <div class="user-info">
-              <div id="userName">Invitado</div>
-              <div id="userMatricula" class="muted">—</div>
+              <div class="login-brand">
+                <h1 class="login-title">A.L.M.A.</h1>
+                <div class="login-sub">Administración Lógica y Modular Académica</div>
+              </div>
+
+              <div class="card-body">
+                <form id="loginForm">
+                  <div class="form-row">
+                    <label class="visually-hidden" for="loginUser">Usuario</label>
+                    <input id="loginUser" class="form-control with-icon" placeholder="Usuario" autocomplete="username" required />
+                  </div>
+                  <div class="form-row">
+                    <label class="visually-hidden" for="loginPass">Contraseña</label>
+                    <input id="loginPass" type="password" class="form-control" placeholder="Contraseña" autocomplete="current-password" required />
+                  </div>
+                  <div class="login-actions">
+                    <button type="submit" class="btn">Acceder</button>
+                  </div>
+                </form>
+                
+              </div>
             </div>
           </div>
-          <nav class="nav" id="mainNav">
-            <a class="nav-item active" data-route="dashboard" role="button">🏠 Dashboard</a>
-            <a class="nav-item" data-route="grades" role="button">📊 Calificaciones</a>
-            <a class="nav-item" data-route="schedule" role="button">🗓️ Horario</a>
-            <a class="nav-item" data-route="inscriptions" role="button">📄 Inscripciones</a>
-            <a class="nav-item" data-route="requests" role="button">✉️ Trámites</a>
-            <a class="nav-item" data-route="account" role="button">💳 Estado de cuenta</a>
-          </nav>
         </div>
-      </aside>
+      </section>
 
-      <main class="content" id="content" role="main">
-        <section id="view-dashboard" class="view active">
-          <div class="grid">
-            <div class="col main-col">
-              <div class="card kpi-card" id="kpiCard">
-                <div class="kpi-row">
-                  <div>
-                    <div class="kpi-label">Promedio General</div>
-                    <div class="kpi-value" id="gpa">—</div>
+      <!-- STUDENT DASHBOARD -->
+      <section id="view-dashboard" class="view" role="region" aria-label="Dashboard">
+        <div class="container">
+          <div class="grid" style="grid-template-columns:2fr 1fr; gap:20px; margin-top:40px">
+            <div class="main-col">
+              <!-- Summary / KPIs -->
+              <div class="card" style="display:flex; gap:18px; align-items:center; justify-content:space-between">
+                <div>
+                  <h2 style="margin:0 0 6px; font-size:22px">Bienvenido, <span id="userGreeting">Alumno</span></h2>
+                  <div class="text-muted">Resumen académico</div>
+                </div>
+                <div style="display:flex; gap:12px; align-items:center">
+                  <div style="text-align:center">
+                    <div class="muted-small">GPA</div>
+                    <div id="gpa" style="font-weight:700; font-size:20px">—</div>
                   </div>
-                  <div>
-                    <div class="kpi-label">Promedio Periodo</div>
-                    <div class="kpi-value" id="periodAvg">—</div>
+                  <div style="text-align:center">
+                    <div class="muted-small">Créditos</div>
+                    <div id="credits" style="font-weight:700; font-size:20px">—</div>
                   </div>
-                  <div>
-                    <div class="kpi-label">Créditos Aprobados</div>
-                    <div class="kpi-value" id="credits">—</div>
+                  <div style="text-align:center">
+                    <div class="muted-small">Periodo</div>
+                    <div id="currentPeriod" style="font-weight:700; font-size:20px">—</div>
                   </div>
                 </div>
               </div>
 
-              <div class="card" id="gradesCard">
-                <div class="card-header">Calificaciones — <span id="currentPeriod">Periodo</span>
-                  <div class="card-actions">
-                    <button id="exportGrades" class="btn small">Exportar CSV</button>
+              <!-- Grades table -->
+              <div class="card" style="margin-top:18px">
+                <div class="card-header">
+                  <div style="font-weight:700">Calificaciones — Historial</div>
+                  <div>
+                    <button id="downloadTira" class="btn small">Exportar PDF</button>
                   </div>
                 </div>
                 <div class="card-body">
-                  <table class="table" id="gradesTable">
-                    <thead>
-                      <tr><th>Materia</th><th>Profesor</th><th>Parciales</th><th>Final</th><th>Estado</th></tr>
-                    </thead>
-                    <tbody>
-                      <tr><td colspan="5" class="muted">Inicie sesión para ver sus calificaciones.</td></tr>
-                    </tbody>
-                  </table>
+                  <div class="table-responsive">
+                    <table id="gradesTable" class="table">
+                      <thead><tr><th>Materia</th><th>Profesor</th><th>Parciales</th><th>Final</th><th>Estado</th></tr></thead>
+                      <tbody>
+                        <!-- renderGrades rellenará -->
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
 
-              <div class="card" id="scheduleCard">
-                <div class="card-header">Horario Semanal
-                  <div class="card-actions"><button id="viewMap" class="btn small">Ver Mapa</button></div>
+              <!-- Schedule + Requests -->
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:18px">
+                <div class="card">
+                  <div class="card-header"><div style="font-weight:700">Horario</div></div>
+                  <div class="card-body" id="scheduleContent">(Horario y mapa interactivo en una versión completa)</div>
                 </div>
-                <div class="card-body">
-                  <div id="schedulePlaceholder" class="muted">Horario no disponible (demo).</div>
+                <div class="card">
+                  <div class="card-header"><div style="font-weight:700">Trámites en línea</div></div>
+                  <div class="card-body">
+                    <div style="margin-bottom:8px">Solicita trámites académicos</div>
+                    <div class="form-row"><select id="reqType" class="form-control"><option value="baja">Baja temporal</option><option value="constancia">Constancia</option><option value="otro">Otro</option></select></div>
+                    <div class="form-row"><textarea id="reqDesc" class="form-control" rows="2" placeholder="Descripción (breve)"></textarea></div>
+                    <div class="form-row"><button id="reqSubmit" class="btn small">Enviar solicitud</button></div>
+                    <div id="reqResult" class="muted-small mt-8"></div>
+                  </div>
                 </div>
+              </div>
+
+              <!-- Account -->
+              <div class="card" style="margin-top:18px">
+                <div class="card-header"><div style="font-weight:700">Estado de cuenta</div>
+                  <div><button id="accountExport" class="btn small">Exportar</button></div>
+                </div>
+                <div class="card-body">Saldo: <strong id="balance"> <span>—</span></strong></div>
               </div>
             </div>
 
-            <aside class="col side-col">
-              <div class="card" id="notificationsCard">
-                <div class="card-header">Notificaciones</div>
-                <div class="card-body" id="notificationsList">
-                  <div class="muted">Sin notificaciones.</div>
-                </div>
+            <aside class="side-col">
+              <div class="card">
+                <div style="font-weight:700">Notificaciones</div>
+                <div id="notificationsList" class="mt-8">Cargando notificaciones...</div>
               </div>
-
-              <div class="card" id="accountCard">
-                <div class="card-header">Estado de cuenta</div>
-                <div class="card-body">
-                  <div id="balance">Saldo: <strong>—</strong></div>
-                  <div class="mt-8"><button id="viewPayments" class="btn">Ver movimientos</button></div>
-                </div>
-              </div>
-
-              <div class="card" id="quickActions">
-                <div class="card-header">Acciones rápidas</div>
-                <div class="card-body actions">
-                  <button class="btn block" id="downloadTira">Descargar Tira (PDF)</button>
-                  <button class="btn outline block" id="requestTramite">Solicitar Trámite</button>
+              <div class="card" style="margin-top:18px">
+                <div style="font-weight:700">Acciones rápidas</div>
+                <div style="display:flex; gap:8px; margin-top:10px">
+                  <button class="btn small">Inscripción</button>
+                  <button class="btn outline small">Horario</button>
                 </div>
               </div>
             </aside>
           </div>
+        </div>
+      </section>
 
-          <div class="card mt-16" id="historyCard">
-            <div class="card-header">Historial Académico</div>
-            <div class="card-body muted">Historial del estudiante (demo) — exportable.</div>
-          </div>
-        </section>
+      <!-- TEACHER DASHBOARD -->
+      <section id="view-teacher" class="view" role="region" aria-label="Teacher">
+        <div class="container">
+          <div class="grid" style="grid-template-columns:2fr 1fr; gap:20px; margin-top:40px">
+            <div class="main-col">
+              <div class="card">
+                <h2 style="margin:0 0 8px; font-size:22px">Panel docente</h2>
+                <div class="text-muted">Herramientas para captura y gestión de grupos</div>
+              </div>
 
-        <section id="view-requests" class="view">
-          <div class="card">
-            <div class="card-header">Solicitar Trámite</div>
-            <div class="card-body">
-              <div class="form-row"><label>Tipo de trámite</label>
-                <select id="reqType"><option value="baja_temporal">Baja temporal</option><option value="constancia">Constancia</option><option value="otro">Otro</option></select></div>
-              <div class="form-row"><label>Descripción</label><textarea id="reqDesc" rows="4"></textarea></div>
-              <div class="form-row"><button id="reqSubmit" class="btn">Enviar solicitud</button></div>
-              <div id="reqResult" class="muted mt-8"></div>
-            </div>
-          </div>
-        </section>
+              <div class="card" style="margin-top:18px">
+                <div class="card-header"><div style="font-weight:700">Captura de calificaciones</div></div>
+                <div class="card-body">
+                  <!-- Este contenedor lo usa initTeacherCapture -->
+                  <div id="teacherCapture">Cargando herramienta de captura...</div>
+                </div>
+              </div>
 
-        <section id="view-schedule" class="view">
-          <div class="card">
-            <div class="card-header">Horario e Mapa de Aulas</div>
-            <div class="card-body">
-              <div id="scheduleContainer">
-                <p class="muted">Horario no disponible en demo. Mapa interactivo de ejemplo:</p>
-                <!-- Simple SVG map (mock) -->
-                <svg id="campusMap" width="100%" height="240" viewBox="0 0 800 240" style="border:1px solid #eee; background:#fff">
-                  <rect x="10" y="10" width="200" height="100" fill="#f8fafc" stroke="#e6e9ee"/>
-                  <text x="20" y="40" font-size="14" fill="#0B2545">Edificio A</text>
-                  <circle cx="70" cy="80" r="12" fill="#8B1E2F" class="map-pin" data-aula="A-101" />
-                  <circle cx="140" cy="80" r="12" fill="#0B2545" class="map-pin" data-aula="A-102" />
-
-                  <rect x="260" y="10" width="500" height="200" fill="#f8fafc" stroke="#e6e9ee"/>
-                  <text x="270" y="40" font-size="14" fill="#0B2545">Edificio B</text>
-                  <circle cx="320" cy="80" r="12" fill="#2E8B57" class="map-pin" data-aula="B-203" />
-                  <circle cx="420" cy="100" r="12" fill="#E6B800" class="map-pin" data-aula="B-204" />
-                </svg>
-                <div id="mapInfo" class="mt-8 muted">Haz clic en un pin para ver el aula.</div>
+              <div class="card" style="margin-top:18px">
+                <div class="card-header"><div style="font-weight:700">Reportes de grupo</div>
+                  <div><button id="exportGroupReport" class="btn small">Exportar</button></div>
+                </div>
+                <div class="card-body" id="groupReports">Seleccione un grupo para ver desempeño.</div>
               </div>
             </div>
-          </div>
-        </section>
 
-        <section id="view-account" class="view">
-          <div class="card">
-            <div class="card-header">Estado de cuenta</div>
-            <div class="card-body">
-              <div id="accountSummary">Cargando estado de cuenta...</div>
-              <div class="mt-8"><button id="accountExport" class="btn small">Exportar movimientos</button></div>
-            </div>
+            <aside class="side-col">
+              <div class="card">
+                <div style="font-weight:700">Grupos asignados</div>
+                <div id="teacherGroups" class="mt-8">Cargando grupos...</div>
+              </div>
+              <div class="card" style="margin-top:18px">
+                <div style="font-weight:700">Acciones</div>
+                <div style="display:flex; gap:8px; margin-top:10px">
+                  <button class="btn small" id="openCapture">Nueva captura</button>
+                  <button class="btn outline small" id="viewAttendance">Asistencia</button>
+                </div>
+              </div>
+            </aside>
           </div>
-        </section>
+        </div>
+      </section>
+    </main>
 
-        <section id="view-grades" class="view">
-          <div class="card">
-            <div class="card-header">Captura de Calificaciones (Docente)</div>
-            <div class="card-body" id="teacherCapture">
-              <div class="muted">Inicie sesión como docente para capturar calificaciones.</div>
-            </div>
-          </div>
-        </section>
-
-      </main>
-    </div>
+    <script src="js/api-mock.js"></script>
+    <!-- jsPDF (cliente) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="js/app.js"></script>
   </div>
-
-  <!-- Login modal -->
-  <div id="modalLogin" class="modal hidden">
-    <div class="modal-card">
-      <h3>Iniciar sesión (Demo)</h3>
-      <div class="form-row"><label>Matrícula / ID</label><input id="loginUser" /></div>
-      <div class="form-row"><label>Contraseña</label><input id="loginPass" type="password" /></div>
-      <div class="form-row"><button id="loginSubmit" class="btn">Entrar</button> <button id="loginCancel" class="btn outline">Cancelar</button></div>
-      <div class="muted mt-8">Cuentas de prueba: Alumno A12345 / 12345  — Profesor 100 / 101</div>
-    </div>
-  </div>
-
-  <script type="module" src="/saes/js/app.js"></script>
-  <!-- jsPDF (cliente) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </body>
 </html>
